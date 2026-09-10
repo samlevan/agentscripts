@@ -39,7 +39,7 @@ export class McpBridge {
   }
 
   buildServer() {
-    const server = new Server({ name: "agentscripts", version: this.version }, { capabilities: { tools: { listChanged: true } } });
+    const server = new Server({ name: "apiforanysite", version: this.version }, { capabilities: { tools: { listChanged: true } } });
     server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: this.tools.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })),
     }));
@@ -107,6 +107,6 @@ export class McpBridge {
       res.end(fs.readFileSync(file));
       return;
     }
-    res.writeHead(404); res.end("agentscripts host: try /mcp or /status");
+    res.writeHead(404); res.end("apiforanysite host: try /mcp or /status");
   }
 }

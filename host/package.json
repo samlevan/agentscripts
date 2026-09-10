@@ -1,9 +1,9 @@
 {
-  "name": "agentscripts-host",
+  "name": "apiforanysite-host",
   "version": "0.1.0",
-  "description": "Native messaging host + local MCP server for the agentscripts browser extension.",
+  "description": "Native messaging host + local MCP server for the API for Any Site browser extension.",
   "type": "module",
-  "bin": { "agentscripts-host": "bin/agentscripts-host.js" },
+  "bin": { "apiforanysite-host": "bin/apiforanysite-host.js" },
   "engines": { "node": ">=20" },
   "license": "MIT",
   "dependencies": {

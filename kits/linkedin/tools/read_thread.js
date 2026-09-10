@@ -1,5 +1,6 @@
 // Reads one LinkedIn conversation in full (Voyager messaging GraphQL, same-origin).
-async function run(args, ctx) {
+async function run(args) {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const id = String(args.conversation_id || "").trim();
   if (!id) throw new Error("conversation_id is required (from list_conversations)");
   const csrf = (document.cookie.match(/JSESSIONID="?([^";]+)/) || [])[1];

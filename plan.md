@@ -1,4 +1,4 @@
-# agentscripts, build plan
+# API for Any Site, build plan
 
 Technical breakdown of design.md. Written 2026-09-10 after design sign-off.
 
@@ -30,9 +30,9 @@ scripts/       gen-skill.js (tool list in SKILL.md from the manifest)
 
 ## Host
 
-- `bin/agentscripts-host`: the native messaging host. Started by the browser on `connectNative`. Opens the MCP server on `127.0.0.1:4890` (next free port if taken, reported to the extension). One process per browser profile.
+- `bin/apiforanysite-host`: the native messaging host. Started by the browser on `connectNative`. Opens the MCP server on `127.0.0.1:4890` (next free port if taken, reported to the extension). One process per browser profile.
 - MCP tools are rebuilt from the extension's installed kits each time the extension reports a change (`kits.changed`). Tool name `<kit>.<tool>`, schema from the manifest.
-- `agentscripts-host install`: writes the native messaging manifest (`com.agentscripts.host.json`) into Chrome and Arc's `NativeMessagingHosts` directories with the extension id, and prints the `claude mcp add --transport http agentscripts http://127.0.0.1:4890/mcp` line.
+- `apiforanysite-host install`: writes the native messaging manifest (`com.apiforanysite.host.json`) into Chrome and Arc's `NativeMessagingHosts` directories with the extension id, and prints the `claude mcp add --transport http apiforanysite http://127.0.0.1:4890/mcp` line.
 - Dev server: serves `kits/` from the repo for local installs.
 
 ## Security enforcement in M1
@@ -57,7 +57,15 @@ scripts/       gen-skill.js (tool list in SKILL.md from the manifest)
 - Open: the egress CSP on the USER_SCRIPT world is set but untested until the extension is loaded (`example.egress_probe` reports it).
 
 ## Install security (2026-09-10, after review)
-The popup was built looser than design.md. Corrected: the default install surface is the curated index (`index/kits.json` in the repo, fetched from `raw.githubusercontent.com/samlevan/agentscripts/main`), one Install button per reviewed kit. Arbitrary sources (a commit-pinned GitHub URL, or a local dev server) are only reachable with the developer-mode box ticked, and the preview labels them "unreviewed source". `fetchKit(source, {fromIndex})` refuses a non-index source unless developer mode is on. Getting a kit to other users = a pull request adding an entry to `index/kits.json`, which the maintainer reviews before merging. Nobody can hand another user a kit the maintainer has not reviewed. The host serves a `dev: true` index of the local checkout at `/index/kits.json` for local work only.
+The popup was built looser than design.md. Corrected: the default install surface is the curated index (`index/kits.json` in the repo, fetched from `raw.githubusercontent.com/samlevan/apiforanysite/main`), one Install button per reviewed kit. Arbitrary sources (a commit-pinned GitHub URL, or a local dev server) are only reachable with the developer-mode box ticked, and the preview labels them "unreviewed source". `fetchKit(source, {fromIndex})` refuses a non-index source unless developer mode is on. Getting a kit to other users = a pull request adding an entry to `index/kits.json`, which the maintainer reviews before merging. Nobody can hand another user a kit the maintainer has not reviewed. The host serves a `dev: true` index of the local checkout at `/index/kits.json` for local work only.
 
 ## Egress finding (2026-09-10)
 `example.egress_probe` through the loaded extension: cross-origin `fetch` to httpbin.org is BLOCKED ("Failed to fetch"), which is the claim that mattered: a kit cannot ship page data to a third party. Same-origin `fetch` on example.com also came back blocked, yet `linkedin.list_conversations` (a same-origin `fetch` to the Voyager API) works through the same USER_SCRIPT-world CSP. I do not yet understand why same-origin behaves differently on the two sites; it is recorded as an open question, not explained. It is not a security hole (stricter, not looser), and it does not block the LinkedIn kit, whose same-origin calls succeed.
+
+## Rate limits (2026-09-10)
+Per-category caps plus one overall daily ceiling (Sam's pick over per-tool). Declared in the kit manifest (`categories: {reads, actions}` with a `dailyLimit` each, tools tagged `category`, plus a top-level `dailyLimit` for the overall). The extension counts a rolling 24-hour window from the audit log, counting only calls that actually ran (a cap refusal is tagged `limited` and never counts itself), and refuses before touching a tab when a cap is reached, with an error the agent can act on. The options page renders a live dashboard per category (used / editable limit + progress bar) and an "All actions" row; edits persist as per-kit overrides on top of the manifest defaults.
+
+LinkedIn defaults: reads 120/day, actions 40/day, overall 150/day. Provenance: the only published LinkedIn numbers are for *sending* (invites, messages), which this kit never does, so these come from the rolling-24h velocity signal ("~150 total actions/day, no bursts" is the community ceiling; view-like reads sit at 80-150/day free). There is no published number for accepting, ignoring or removing, so the actions cap is a conservative read of the velocity principle, not a cited figure. All practitioner/vendor sources, not LinkedIn's. Verified: over-cap reads refused, actions unaffected (independent category), refused calls not counted.
+
+## Kit gallery + per-kit settings screen (2026-09-10)
+The options page is now two views. Gallery: "Your kits" (installed, as cards) + "Browse kits" (index, install more) + Agent + Recent calls. Click a kit to open its own screen: header, its declared panels, tools, settings (allow-destructive, origins, pin, remove). The daily-limits dashboard moved out of the app level into the LinkedIn kit's screen, rendered by the extension from the kit's declared `categories`. This is the general pattern for kit UI: a kit declares data, the extension draws it in the kit's own screen; no kit code runs in the privileged options page. Client-side routing via a `currentKit` variable, no kit-shipped HTML.

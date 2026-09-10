@@ -1,7 +1,8 @@
 // Removes a 1st-degree connection from their profile page: More menu, "Remove connection", confirm.
 // Destructive: the runtime only runs it with the kit's destructive switch on and confirm: true in the call.
 // args.dry_run stops before the confirmation and reports what it found.
-async function run(args, ctx) {
+async function run(args) {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const wantSlug = String(args.id || args.profile_url || "").trim().replace(/^https?:\/\/[^/]+\/in\//, "").replace(/\/.*$/, "");
   const here = (location.pathname.match(/\/in\/([^/?#]+)/) || [])[1] || "";
   if (!wantSlug) throw new Error("id (profile slug) or profile_url is required");
@@ -23,17 +24,17 @@ async function run(args, ctx) {
   let item = findItem();
   if (!item) {
     more.click();
-    for (let i = 0; i < 10 && !item; i++) { await ctx.sleep(250); item = findItem(); }
+    for (let i = 0; i < 10 && !item; i++) { await sleep(250); item = findItem(); }
   }
   if (!item) { document.body.click(); throw new Error("More menu has no Remove connection item"); }
   if (args.dry_run) { document.body.click(); return { dry_run: true, id: wantSlug, name: name.trim(), would_click: "More > Remove connection > confirm" }; }
   item.click();
-  await ctx.sleep(900);
+  await sleep(900);
   const dialog = document.querySelector('[role="dialog"], [role="alertdialog"]');
   const confirm = dialog && [...dialog.querySelectorAll("button")].find((b) => /^remove$/i.test(b.textContent.trim()));
   if (!confirm) throw new Error("confirmation dialog did not appear or has no Remove button; nothing was removed");
   confirm.click();
-  await ctx.sleep(1500);
+  await sleep(1500);
   const after = [...main.querySelectorAll("button")].map((b) => b.textContent.trim());
   return { id: wantSlug, name: name.trim(), removed: after.includes("Connect") || !after.includes("Message"), buttons_after: after.filter((t) => ["Connect", "Message", "Pending", "Follow"].includes(t)) };
 }

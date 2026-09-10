@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-const dir = path.join(os.homedir(), "Library", "Logs", "agentscripts");
+const dir = path.join(os.homedir(), "Library", "Logs", "apiforanysite");
 let stream = null;
 export function log(...a) {
   try {

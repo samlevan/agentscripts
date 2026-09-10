@@ -16,7 +16,7 @@ if (cmd === "install") {
   console.log(`wrapper: ${out.wrapper}`);
   for (const [b, f] of out.written) console.log(`${b}: ${f}`);
   console.log(`config: ${configPath} ${JSON.stringify(out.cfg)}`);
-  console.log(`\nNext: load the extension (chrome://extensions, Load unpacked, then turn on "Allow User Scripts" on its details page), then:\n  claude mcp add --transport http agentscripts http://127.0.0.1:${out.cfg.port || DEFAULT_PORT}/mcp`);
+  console.log(`\nNext: load the extension (chrome://extensions, Load unpacked, then turn on "Allow User Scripts" on its details page), then:\n  claude mcp add --transport http apiforanysite http://127.0.0.1:${out.cfg.port || DEFAULT_PORT}/mcp`);
 } else if (cmd === "status") {
   const cfg = readConfig();
   const port = cfg.port || DEFAULT_PORT;
@@ -25,7 +25,7 @@ if (cmd === "install") {
 } else if (cmd === "--version" || cmd === "-v") {
   console.log(version);
 } else if (cmd && !cmd.startsWith("chrome-extension://")) {
-  console.log("usage: agentscripts-host [install [--kits-dir DIR] [--extension-id ID] [--user-data-dir DIR] [--all-browsers] | status | --version]\n(no command: run as the native messaging host; the browser does this)");
+  console.log("usage: apiforanysite-host [install [--kits-dir DIR] [--extension-id ID] [--user-data-dir DIR] [--all-browsers] | status | --version]\n(no command: run as the native messaging host; the browser does this)");
 } else {
   // Chrome passes the extension origin as argv[2] when it launches the host.
   runHost({ version }).catch((e) => { log("fatal", e.stack || e.message); process.exit(1); });

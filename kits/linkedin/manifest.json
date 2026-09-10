@@ -1,27 +1,154 @@
 {
   "name": "linkedin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "LinkedIn invitations and inbox, read from your own logged-in session: list, accept or ignore pending invitations, list recent conversations, read a thread, remove a connection. Nothing sends on your behalf.",
-  "origins": ["https://www.linkedin.com/*"],
+  "origins": [
+    "https://www.linkedin.com/*"
+  ],
   "home": "https://www.linkedin.com/feed/",
   "tools": [
-    { "name": "list_invitations", "page": "https://www.linkedin.com/mynetwork/invitation-manager/received/",
+    {
+      "name": "list_invitations",
+      "page": "https://www.linkedin.com/mynetwork/invitation-manager/received/",
       "description": "List pending received connection invitations: id (profile slug), name, headline, note (the message they attached, if any), mutual connection count, profile URL.",
-      "inputSchema": { "type": "object", "properties": { "count": { "type": "integer", "description": "Max invitations to return (default 50)." } } } },
-    { "name": "accept_invitation", "page": "https://www.linkedin.com/mynetwork/invitation-manager/received/",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Max invitations to return (default 50)."
+          }
+        }
+      },
+      "category": "reads"
+    },
+    {
+      "name": "accept_invitation",
+      "page": "https://www.linkedin.com/mynetwork/invitation-manager/received/",
       "description": "Accept one pending invitation by id (profile slug from list_invitations). Reversible later with remove_connection. dry_run reports what would be clicked.",
-      "inputSchema": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" }, "dry_run": { "type": "boolean" } } } },
-    { "name": "ignore_invitation", "page": "https://www.linkedin.com/mynetwork/invitation-manager/received/", "destructive": true,
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "dry_run": {
+            "type": "boolean"
+          }
+        }
+      },
+      "category": "actions"
+    },
+    {
+      "name": "ignore_invitation",
+      "page": "https://www.linkedin.com/mynetwork/invitation-manager/received/",
+      "destructive": true,
       "description": "Ignore one pending invitation by id. Not reversible: the sender is not told, but the invitation is gone. dry_run reports what would be clicked.",
-      "inputSchema": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" }, "dry_run": { "type": "boolean" } } } },
-    { "name": "list_conversations", "page": "https://www.linkedin.com/messaging/",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "dry_run": {
+            "type": "boolean"
+          }
+        }
+      },
+      "category": "actions"
+    },
+    {
+      "name": "list_conversations",
+      "page": "https://www.linkedin.com/messaging/",
       "description": "List recent conversations from the messaging inbox: other participant (name, headline, distance, profile URL), last message (text, time, whether you sent it), unread count. category PRIMARY_INBOX is the Focused tab, SECONDARY_INBOX is Other.",
-      "inputSchema": { "type": "object", "properties": { "count": { "type": "integer", "description": "Max conversations (default 20, max 100)." }, "category": { "type": "string", "enum": ["PRIMARY_INBOX", "SECONDARY_INBOX"], "default": "PRIMARY_INBOX" }, "since": { "type": "string", "description": "ISO date; stop at conversations older than this." } } } },
-    { "name": "read_thread", "page": "https://www.linkedin.com/messaging/",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Max conversations (default 20, max 100)."
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "PRIMARY_INBOX",
+              "SECONDARY_INBOX"
+            ],
+            "default": "PRIMARY_INBOX"
+          },
+          "since": {
+            "type": "string",
+            "description": "ISO date; stop at conversations older than this."
+          }
+        }
+      },
+      "category": "reads"
+    },
+    {
+      "name": "read_thread",
+      "page": "https://www.linkedin.com/messaging/",
       "description": "Read one conversation in full by conversation_id (from list_conversations): every message with sender, time, and whether you sent it. Use it to tell a pitch from a conversation.",
-      "inputSchema": { "type": "object", "required": ["conversation_id"], "properties": { "conversation_id": { "type": "string" }, "max_messages": { "type": "integer", "default": 50 } } } },
-    { "name": "remove_connection", "destructive": true,
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "conversation_id"
+        ],
+        "properties": {
+          "conversation_id": {
+            "type": "string"
+          },
+          "max_messages": {
+            "type": "integer",
+            "default": 50
+          }
+        }
+      },
+      "category": "reads"
+    },
+    {
+      "name": "remove_connection",
+      "destructive": true,
       "description": "Remove a 1st-degree connection. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Silent for them. dry_run stops before the confirmation.",
-      "inputSchema": { "type": "object", "required": ["id", "page"], "properties": { "id": { "type": "string", "description": "profile slug" }, "page": { "type": "string", "description": "https://www.linkedin.com/in/<slug>/" }, "dry_run": { "type": "boolean" } } } }
-  ]
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id",
+          "page"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "profile slug"
+          },
+          "page": {
+            "type": "string",
+            "description": "https://www.linkedin.com/in/<slug>/"
+          },
+          "dry_run": {
+            "type": "boolean"
+          }
+        }
+      },
+      "category": "actions"
+    }
+  ],
+  "categories": {
+    "reads": {
+      "label": "Reads",
+      "dailyLimit": 120,
+      "help": "Listing invitations and conversations, reading a thread."
+    },
+    "actions": {
+      "label": "Actions",
+      "dailyLimit": 40,
+      "help": "Accepting, ignoring, removing. These change your account."
+    }
+  },
+  "dailyLimit": 150
 }

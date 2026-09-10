@@ -8,7 +8,7 @@ import { HOST_NAME, configDir, readConfig, writeConfig, DEFAULT_PORT } from "./c
 export const EXTENSION_ID = "mlknbfgdblbbdoomplebifjopkoflcdg";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const binPath = path.resolve(here, "..", "bin", "agentscripts-host.js");
+const binPath = path.resolve(here, "..", "bin", "apiforanysite-host.js");
 
 function browserDirs() {
   const h = os.homedir();
@@ -40,7 +40,7 @@ export function install({ kitsDir, extensionId = EXTENSION_ID, all = false, extr
 
   const manifest = {
     name: HOST_NAME,
-    description: "agentscripts native messaging host",
+    description: "API for Any Site native messaging host",
     path: wrapper,
     type: "stdio",
     allowed_origins: [`chrome-extension://${extensionId}/`],
