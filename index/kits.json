@@ -4,14 +4,14 @@
     {
       "name": "example",
       "description": "Smoke-test kit: reads example.com.",
-      "source": null,
-      "pin": null
+      "source": "https://github.com/samlevan/agentscripts/tree/127c6365b1466c592ddfc8933fb1c142ba8011d4/kits/example",
+      "pin": "127c6365b1466c592ddfc8933fb1c142ba8011d4"
     },
     {
       "name": "linkedin",
       "description": "Invitations and inbox triage on your own LinkedIn session; reads and removes only.",
-      "source": null,
-      "pin": null
+      "source": "https://github.com/samlevan/agentscripts/tree/127c6365b1466c592ddfc8933fb1c142ba8011d4/kits/linkedin",
+      "pin": "127c6365b1466c592ddfc8933fb1c142ba8011d4"
     }
   ]
 }
