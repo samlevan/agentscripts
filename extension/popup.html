@@ -1,0 +1,60 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>agentscripts</title>
+<style>
+  body { font: 13px/1.4 -apple-system, system-ui, sans-serif; margin: 0; width: 380px; color: #1a1a1a; }
+  header { padding: 10px 14px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; }
+  header b { font-size: 14px; }
+  .pill { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #eee; }
+  .pill.on { background: #d9f2e1; color: #135c2e; }
+  .pill.off { background: #fde2e2; color: #7a1c1c; }
+  section { padding: 10px 14px; border-bottom: 1px solid #eee; }
+  h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #666; }
+  .kit { padding: 8px 0; border-top: 1px solid #f0f0f0; }
+  .kit:first-of-type { border-top: 0; }
+  .kit .name { font-weight: 600; }
+  .kit .meta { color: #666; font-size: 12px; }
+  .tools { margin: 4px 0 0; padding-left: 16px; color: #333; }
+  .tools li.destructive::after { content: " destructive"; color: #a33; font-size: 11px; }
+  input[type=text] { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font: inherit; }
+  button { font: inherit; padding: 5px 10px; border-radius: 6px; border: 1px solid #bbb; background: #fafafa; cursor: pointer; }
+  button.primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .row { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+  .warn { background: #fff7e0; border: 1px solid #f0d78c; padding: 8px 10px; border-radius: 6px; margin-bottom: 8px; }
+  .log { max-height: 160px; overflow: auto; font-family: ui-monospace, monospace; font-size: 11px; }
+  .log div { padding: 2px 0; border-top: 1px solid #f3f3f3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log .err { color: #a33; }
+  label.sw { display: flex; gap: 6px; align-items: center; font-size: 12px; color: #444; }
+  .muted { color: #777; font-size: 12px; }
+  #msg { color: #a33; font-size: 12px; margin-top: 6px; min-height: 1em; }
+</style></head>
+<body>
+<header><b>agentscripts</b><span id="host" class="pill">host…</span></header>
+<div id="userscripts-warn" class="warn" hidden>
+  User scripts are off. Open <code>chrome://extensions/?id=<span id="extid"></span></code> and turn on <b>Allow User Scripts</b>, then reopen this popup.
+</div>
+<section>
+  <h3>Kits</h3>
+  <div id="kits"><span class="muted">No kits installed.</span></div>
+</section>
+<section>
+  <h3>Available kits</h3>
+  <div id="index"><span class="muted">Loading the index…</span></div>
+  <div id="preview" class="kit" hidden></div>
+  <div id="msg"></div>
+  <label class="sw" style="margin-top:8px"><input id="dev" type="checkbox"> Developer mode</label>
+  <div id="devbox" hidden style="margin-top:6px">
+    <div class="muted" style="margin-bottom:4px">Any source (unreviewed): a commit-pinned GitHub tree URL, or a local dev server.</div>
+    <input id="src" type="text" placeholder="https://github.com/owner/repo/tree/<commit>/kits/<name>">
+    <div class="row"><button id="fetch">Fetch</button></div>
+  </div>
+</section>
+<section>
+  <h3>Agent</h3>
+  <div id="mcp" class="muted">Host not connected. Run <code>agentscripts-host install</code> and reload the extension.</div>
+</section>
+<section>
+  <h3>Audit log</h3>
+  <div id="log" class="log"><span class="muted">No calls yet.</span></div>
+</section>
+<script type="module" src="popup.js"></script>
+</body></html>

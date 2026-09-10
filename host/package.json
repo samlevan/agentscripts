@@ -1,0 +1,12 @@
+{
+  "name": "agentscripts-host",
+  "version": "0.1.0",
+  "description": "Native messaging host + local MCP server for the agentscripts browser extension.",
+  "type": "module",
+  "bin": { "agentscripts-host": "bin/agentscripts-host.js" },
+  "engines": { "node": ">=20" },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0"
+  }
+}

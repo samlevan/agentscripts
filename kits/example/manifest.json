@@ -1,0 +1,12 @@
+{
+  "name": "example",
+  "version": "0.1.0",
+  "description": "Smoke-test kit: reads the title and text of a page on example.com.",
+  "origins": ["https://example.com/*"],
+  "home": "https://example.com/",
+  "tools": [
+    { "name": "page_title", "description": "Return the title and URL of the example.com page.", "inputSchema": { "type": "object", "properties": {} } },
+    { "name": "page_text", "description": "Return the visible text of the example.com page, trimmed to max_chars.", "inputSchema": { "type": "object", "properties": { "max_chars": { "type": "integer", "default": 2000 } } } },
+    { "name": "egress_probe", "description": "Diagnostic: tries a cross-origin fetch from the tool world and reports whether the runtime blocked it.", "inputSchema": { "type": "object", "properties": {} } }
+  ]
+}

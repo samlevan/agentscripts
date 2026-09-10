@@ -1,0 +1,17 @@
+{
+  "$comment": "Curated marketplace index. Every entry is reviewed and pinned to a commit; the extension installs from these only, unless developer mode is on. To list a kit, open a pull request adding an entry here; the maintainer reviews the kit's code before merging.",
+  "kits": [
+    {
+      "name": "example",
+      "description": "Smoke-test kit: reads example.com.",
+      "source": null,
+      "pin": null
+    },
+    {
+      "name": "linkedin",
+      "description": "Invitations and inbox triage on your own LinkedIn session; reads and removes only.",
+      "source": null,
+      "pin": null
+    }
+  ]
+}
