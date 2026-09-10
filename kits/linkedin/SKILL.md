@@ -1,6 +1,6 @@
 ---
 name: linkedin
-description: Triage LinkedIn invitations and conversations from the user's own logged-in browser via agentscripts. Use when the user asks who is waiting to connect, whether to accept or ignore someone, who pitched them after connecting, or to clean up connections. Reads and removes only; never sends a message.
+description: Triage LinkedIn invitations and conversations from the user's own logged-in browser via API for Any Site. Use when the user asks who is waiting to connect, whether to accept or ignore someone, who pitched them after connecting, or to clean up connections. Reads and removes only; never sends a message.
 ---
 
 # linkedin kit

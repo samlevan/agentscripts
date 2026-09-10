@@ -1,0 +1,157 @@
+<!doctype html><html><head><meta charset="utf-8"><title>API for Any Site settings — directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,opt@0,6..72;1,6..72&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#e9e9ec;font-family:sans-serif;color:#111}
+  .page{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+  .lede{font:600 13px/1.4 'DM Sans',sans-serif;color:#555;text-transform:uppercase;letter-spacing:.08em;margin:0 0 2px}
+  .strip{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:10px 0 38px;align-items:start}
+  .frame{border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.12),0 8px 30px rgba(0,0,0,.06)}
+  .dirhdr{font:700 22px/1.2 'DM Sans',sans-serif;margin:36px 0 2px}
+  .dirnote{font:400 13.5px/1.5 'DM Sans',sans-serif;color:#666;margin:0 0 6px;max-width:760px}
+  .cap{font:500 11px/1 'DM Sans',sans-serif;color:#888;text-transform:uppercase;letter-spacing:.1em;margin:0 0 6px}
+
+  /* ============ A · TERMINAL / DEV UTILITARIAN ============ */
+  .A{font-family:'JetBrains Mono',monospace;background:#0f1115;color:#c9d1d9;padding:20px 22px}
+  .A .top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #232a33;padding-bottom:12px;margin-bottom:16px}
+  .A .brand{font-weight:700;font-size:15px;color:#e6edf3;letter-spacing:-.02em}
+  .A .brand .dot{color:#5ee0a0}
+  .A .stat{font-size:11px;color:#5ee0a0}
+  .A .sec{font-size:10px;letter-spacing:.14em;color:#6b7684;margin:18px 0 8px}
+  .A .krow{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid #1b2027;cursor:pointer}
+  .A .krow:hover .kn{color:#5ee0a0}
+  .A .kn{color:#e6edf3;font-weight:500;font-size:13px}
+  .A .kv{color:#586069;font-size:11px}
+  .A .kd{color:#8b949e;font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .A .arr{color:#39414c}
+  .A .lim{padding:9px 0;border-top:1px solid #1b2027}
+  .A .lt{display:flex;justify-content:space-between;font-size:12px}
+  .A .lt .lbl{color:#e6edf3}
+  .A .lt .num{color:#8b949e}
+  .A .lt .num b{color:#5ee0a0;font-weight:500}
+  .A .track{height:6px;background:#1b2027;margin-top:6px;border-radius:0}
+  .A .track>span{display:block;height:100%;background:#5ee0a0}
+  .A .btn{font-family:inherit;font-size:11px;background:#1b2027;border:1px solid #2d353f;color:#c9d1d9;padding:3px 9px;border-radius:4px}
+
+  /* ============ B · EDITORIAL / ATELIER ============ */
+  .B{background:#f6f2ea;color:#20201d;padding:26px 28px;font-family:'Newsreader',serif}
+  .B .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px}
+  .B .brand{font-size:23px;font-weight:500;letter-spacing:-.01em}
+  .B .stat{font:500 11px/1 'DM Sans',sans-serif;letter-spacing:.02em;color:#7a5b3a}
+  .B .sec{font:500 12px/1 'DM Sans',sans-serif;letter-spacing:.03em;color:#9a9184;margin:22px 0 4px}
+  .B .krow{display:flex;align-items:baseline;gap:14px;padding:13px 0;border-bottom:1px solid #e4dccd;cursor:pointer}
+  .B .krow:hover .kn{text-decoration:underline}
+  .B .kn{font-size:19px;font-weight:500}
+  .B .kn em{font-style:italic;color:#7a5b3a}
+  .B .kd{font-size:14px;color:#6f6a5e;flex:1;font-family:'DM Sans',sans-serif}
+  .B .kv{font:400 12px/1 'DM Sans',sans-serif;color:#a49a89}
+  .B .lim{padding:12px 0;border-bottom:1px solid #e4dccd}
+  .B .lt{display:flex;justify-content:space-between;align-items:baseline}
+  .B .lt .lbl{font-size:17px}
+  .B .lt .num{font:400 14px/1 'DM Sans',sans-serif;color:#8a8375}
+  .B .lt .num b{color:#20201d;font-weight:600}
+  .B .help{font:400 12.5px/1.4 'DM Sans',sans-serif;color:#9a9184;margin-top:1px}
+  .B .track{height:3px;background:#e4dccd;margin-top:9px}
+  .B .track>span{display:block;height:100%;background:#7a5b3a}
+  .B .btn{font:500 12px/1 'DM Sans',sans-serif;background:none;border:1px solid #20201d;color:#20201d;padding:5px 12px;border-radius:2px}
+
+  /* ============ C · SOFT PRODUCT ============ */
+  .C{background:#fbfaf8;color:#1c1a17;padding:24px 24px;font-family:'DM Sans',sans-serif}
+  .C .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  .C .brand{font:700 20px/1 'Space Grotesk',sans-serif;letter-spacing:-.02em}
+  .C .stat{font-size:11px;font-weight:600;color:#0e8a5f;background:#dff3ea;padding:3px 10px;border-radius:20px}
+  .C .sec{font-size:12px;font-weight:700;color:#b9b2a7;margin:20px 0 8px}
+  .C .krow{display:flex;align-items:center;gap:13px;padding:12px;margin-top:8px;background:#fff;border:1px solid #efe9e0;border-radius:14px;cursor:pointer;box-shadow:0 1px 0 #efe9e0}
+  .C .krow:hover{border-color:#e0895f}
+  .C .ico{width:38px;height:38px;border-radius:11px;background:#fbe7dd;color:#d2673a;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Space Grotesk',sans-serif}
+  .C .grow{flex:1;min-width:0}
+  .C .kn{font-weight:600;font-size:15px}
+  .C .kd{font-size:12.5px;color:#8b8377;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .C .arr{color:#cfc7bb;font-size:20px}
+  .C .lim{padding:13px 0;border-top:1px solid #f0ebe3}
+  .C .lt{display:flex;justify-content:space-between;align-items:baseline}
+  .C .lt .lbl{font-weight:700;font-size:15px}
+  .C .lt .num{font-size:13px;color:#8b8377}
+  .C .lt .num b{color:#1c1a17}
+  .C .help{font-size:12px;color:#a89f92;margin-top:1px}
+  .C .track{height:9px;background:#f0ebe3;border-radius:20px;margin-top:8px;overflow:hidden}
+  .C .track>span{display:block;height:100%;background:#e0895f;border-radius:20px}
+  .C .btn{font:600 12px/1 inherit;background:#1c1a17;color:#fff;border:0;padding:7px 13px;border-radius:9px}
+</style></head>
+<body><div class="page">
+
+<!-- ============ A ============ -->
+<div class="dirhdr">A · Terminal</div>
+<p class="dirnote">Leans into what the product is: tools an agent runs on localhost. Monospace throughout, dark, dense, hairline rules, a single signal-green. Reads like a well-made CLI dashboard.</p>
+<div class="strip">
+  <div class="frame"><div class="A">
+    <div class="top"><div class="brand">agent<span class="dot">·</span>scripts</div><div class="stat">host connected</div></div>
+    <div class="sec">YOUR KITS</div>
+    <div class="krow"><span class="kn">example</span><span class="kv">v0.1.0</span><span class="kd">reads the title and text of example.com</span><span class="arr">→</span></div>
+    <div class="krow"><span class="kn">linkedin</span><span class="kv">v0.2.0</span><span class="kd">invitations & inbox, read from your own session</span><span class="arr">→</span></div>
+    <div class="sec">BROWSE</div>
+    <div class="krow"><span class="kn">gmail</span><span class="kv">index</span><span class="kd">triage the inbox from your own session</span><button class="btn">install</button></div>
+    <div class="sec">AGENT</div>
+    <div class="kd" style="font-size:11px">mcp · http://127.0.0.1:4890/mcp</div>
+  </div></div>
+  <div class="frame"><div class="A">
+    <div class="top"><div class="brand">← linkedin <span class="kv" style="margin-left:6px">v0.2.0</span></div><div class="stat">linkedin.com</div></div>
+    <div class="kd" style="margin-bottom:4px">Invitations & inbox, read from your own logged-in session. Nothing sends.</div>
+    <div class="sec">DAILY LIMITS · LAST 24H</div>
+    <div class="lim"><div class="lt"><span class="lbl">actions</span><span class="num"><b>2</b>/40</span></div><div class="track"><span style="width:5%"></span></div></div>
+    <div class="lim"><div class="lt"><span class="lbl">reads</span><span class="num"><b>8</b>/120</span></div><div class="track"><span style="width:7%"></span></div></div>
+    <div class="lim"><div class="lt"><span class="lbl">all actions</span><span class="num"><b>10</b>/150</span></div><div class="track"><span style="width:7%"></span></div></div>
+    <div class="sec">TOOLS · 6</div>
+    <div class="kd" style="font-size:11px;white-space:normal">list_invitations · accept_invitation · ignore_invitation<span style="color:#d9634a"> ×</span> · list_conversations · read_thread · remove_connection<span style="color:#d9634a"> ×</span></div>
+  </div></div>
+</div>
+
+<!-- ============ B ============ -->
+<div class="dirhdr">B · Editorial</div>
+<p class="dirnote">Refined and quiet. A book serif for names, warm paper, hairline dividers instead of card borders, one oxblood-brown ink used only for meaning. Feels considered, not utilitarian.</p>
+<div class="strip">
+  <div class="frame"><div class="B">
+    <div class="top"><div class="brand">apiforanysite</div><div class="stat">host connected</div></div>
+    <div class="sec">Your kits</div>
+    <div class="krow"><span class="kn">example</span><span class="kd">Reads the title and text of example.com.</span><span class="kv">v0.1.0</span></div>
+    <div class="krow"><span class="kn">linkedin</span><span class="kd">Invitations & inbox, read from your own session.</span><span class="kv">v0.2.0</span></div>
+    <div class="sec">Browse</div>
+    <div class="krow"><span class="kn">gmail</span><span class="kd">Triage the inbox from your own session.</span><button class="btn">Install</button></div>
+    <div class="sec">Agent</div>
+    <div class="kd">mcp — http://127.0.0.1:4890/mcp</div>
+  </div></div>
+  <div class="frame"><div class="B">
+    <div class="top"><div class="brand"><em>linkedin</em></div><div class="stat">linkedin.com</div></div>
+    <div class="kd" style="margin-bottom:6px">Invitations and inbox, read from your own logged-in session. Nothing sends on your behalf.</div>
+    <div class="sec">Daily limits · last 24 hours</div>
+    <div class="lim"><div class="lt"><span class="lbl">Actions</span><span class="num"><b>2</b> / 40</span></div><div class="help">Accepting, ignoring, removing.</div><div class="track"><span style="width:5%"></span></div></div>
+    <div class="lim"><div class="lt"><span class="lbl">Reads</span><span class="num"><b>8</b> / 120</span></div><div class="help">Listing and reading.</div><div class="track"><span style="width:7%"></span></div></div>
+    <div class="lim"><div class="lt"><span class="lbl">All actions</span><span class="num"><b>10</b> / 150</span></div><div class="track"><span style="width:7%"></span></div></div>
+    <div class="sec">Tools</div>
+    <div class="kd">Six, two of them <em style="color:#7a5b3a">change your account</em>.</div>
+  </div></div>
+</div>
+
+<!-- ============ C ============ -->
+<div class="dirhdr">C · Soft product</div>
+<p class="dirnote">Friendly app-store feel. A geometric display face for the wordmark, rounded tiles, one warm coral accent instead of the default blue, larger type. Approachable for a non-developer installing a kit.</p>
+<div class="strip">
+  <div class="frame"><div class="C">
+    <div class="top"><div class="brand">apiforanysite</div><div class="stat">host connected</div></div>
+    <div class="sec">Your kits</div>
+    <div class="krow"><div class="ico">E</div><div class="grow"><div class="kn">example</div><div class="kd">Reads the title and text of example.com.</div></div><div class="arr">›</div></div>
+    <div class="krow"><div class="ico">in</div><div class="grow"><div class="kn">linkedin</div><div class="kd">Invitations & inbox, read from your own session.</div></div><div class="arr">›</div></div>
+    <div class="sec">Browse</div>
+    <div class="krow"><div class="ico">G</div><div class="grow"><div class="kn">gmail</div><div class="kd">Triage the inbox from your own session.</div></div><button class="btn">Install</button></div>
+  </div></div>
+  <div class="frame"><div class="C">
+    <div class="top"><div class="brand" style="font-size:17px">‹ linkedin</div><div class="stat">linkedin.com</div></div>
+    <div class="kd" style="color:#6f675b;margin-bottom:2px">Invitations & inbox, read from your own logged-in session. Nothing sends.</div>
+    <div class="sec">Daily limits · last 24h</div>
+    <div class="lim"><div class="lt"><span class="lbl">Actions</span><span class="num"><b>2</b> / 40</span></div><div class="help">Accepting, ignoring, removing.</div><div class="track"><span style="width:5%"></span></div></div>
+    <div class="lim"><div class="lt"><span class="lbl">Reads</span><span class="num"><b>8</b> / 120</span></div><div class="help">Listing and reading.</div><div class="track"><span style="width:7%"></span></div></div>
+    <div class="lim"><div class="lt"><span class="lbl">All actions</span><span class="num"><b>10</b> / 150</span></div><div class="track"><span style="width:7%"></span></div></div>
+  </div></div>
+</div>
+
+</div></body></html>

@@ -1,83 +1,95 @@
-// Kit storage and install. A kit is {name, source, pin, manifest, tools:{name: code}, installedAt, allowDestructive}.
+// Two sources only: the reviewed CATALOG bundled in this package, or PERSONAL kits from the user's machine.
+import { CATALOG } from "./catalog/registry.js";
 
+const CATALOG_MAP = Object.fromEntries(CATALOG.map((k) => [k.manifest.name, k]));
+export function catalogRun(name, tool) { return CATALOG_MAP[name]?.tools?.[tool] || null; }
+export function isCatalog(name) { return !!CATALOG_MAP[name]; }
+export function listCatalog() { return CATALOG.map((k) => k.manifest); }
+
+async function get(key, dflt) { const o = await chrome.storage.local.get(key); return o[key] ?? dflt; }
+
+export async function getSettings() { return get("settings", { developerMode: false }); }
+export async function saveSettings(s) { await chrome.storage.local.set({ settings: s }); }
+
+// Per-catalog-kit user state: { <name>: { enabled, allowDestructive, limits } }
+async function getCatalogState() { return get("catalogState", {}); }
+async function saveCatalogState(s) { await chrome.storage.local.set({ catalogState: s }); }
+// Personal kits (fetched from the user's machine): { <name>: {manifest, tools:{name:code}, source, pin, allowDestructive, limits} }
+async function getPersonal() { return get("personal", {}); }
+async function savePersonal(p) { await chrome.storage.local.set({ personal: p }); }
+
+// The installed kits the runtime and UI act on: enabled catalog kits + all personal kits.
 export async function getKits() {
-  const { kits = {} } = await chrome.storage.local.get("kits");
-  return kits;
+  const cat = await getCatalogState();
+  const per = await getPersonal();
+  const out = {};
+  for (const k of CATALOG) {
+    const st = cat[k.manifest.name];
+    if (st?.enabled) out[k.manifest.name] = { name: k.manifest.name, manifest: k.manifest, source: "catalog", pin: "catalog", allowDestructive: !!st.allowDestructive, limits: st.limits || null };
+  }
+  for (const [name, p] of Object.entries(per)) {
+    out[name] = { name, manifest: p.manifest, source: "personal", pin: p.pin || "personal", tools: p.tools, allowDestructive: !!p.allowDestructive, limits: p.limits || null };
+  }
+  return out;
 }
 
-export async function saveKits(kits) {
-  await chrome.storage.local.set({ kits });
+export function effectiveLimits(kit) {
+  const cats = (kit.manifest && kit.manifest.categories) || {};
+  const ov = kit.limits || {};
+  const categories = {};
+  for (const [k, c] of Object.entries(cats)) categories[k] = { label: c.label || k, help: c.help || "", dailyLimit: ov.categories && ov.categories[k] != null ? ov.categories[k] : c.dailyLimit };
+  const overall = ov.overall != null ? ov.overall : (kit.manifest && kit.manifest.dailyLimit) || null;
+  return { categories, overall };
+}
+export function toolCategory(kit, toolName) {
+  const t = (kit.manifest.tools || []).find((x) => x.name === toolName);
+  return t ? t.category || null : null;
 }
 
-export async function getSettings() {
-  const { settings = { developerMode: false } } = await chrome.storage.local.get("settings");
-  return settings;
+// ---- catalog install / remove (no download; the code is already in the package) ----
+export async function installCatalog(name, { allowDestructive } = {}) {
+  if (!CATALOG_MAP[name]) throw new Error("not a catalog kit: " + name);
+  const cat = await getCatalogState();
+  cat[name] = { ...(cat[name] || {}), enabled: true };
+  if (allowDestructive != null) cat[name].allowDestructive = allowDestructive;
+  await saveCatalogState(cat);
+}
+export async function removeKit(name) {
+  const cat = await getCatalogState();
+  if (cat[name]) { delete cat[name]; await saveCatalogState(cat); return; }
+  const per = await getPersonal();
+  if (per[name]) { delete per[name]; await savePersonal(per); }
 }
 
-export async function saveSettings(settings) {
-  await chrome.storage.local.set({ settings });
-}
-
-// Turn a source into the base URL its files are fetched from.
-// Accepted: a GitHub tree URL pinned to a commit (https://github.com/o/r/tree/<sha>/kits/<name>),
-// a raw base URL ending in /, or (developer mode) a local dev server URL.
+// ---- personal kits: from the user's own machine ONLY (localhost / dev server). No third-party remote. ----
 export function resolveSource(source) {
-  const gh = source.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/tree\/([0-9a-f]{7,40})\/(.+?)\/?$/);
-  if (gh) {
-    const [, owner, repo, sha, path] = gh;
-    return { base: `https://raw.githubusercontent.com/${owner}/${repo}/${sha}/${path}/`, pin: sha, kind: "github" };
-  }
   if (/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//.test(source)) {
-    return { base: source.endsWith("/") ? source : source + "/", pin: "dev", kind: "dev" };
+    return { base: source.endsWith("/") ? source : source + "/", pin: "local", kind: "local" };
   }
-  if (/^https:\/\/.+\/$/.test(source)) {
-    return { base: source, pin: "url", kind: "url" };
-  }
-  throw new Error("Unrecognized kit source. Use a GitHub tree URL pinned to a commit, or a dev server URL in developer mode.");
+  throw new Error("Personal kits load from your own machine only (http://localhost/... or http://127.0.0.1/...). Third-party remote sources are not allowed.");
 }
-
 export function validateManifest(m) {
   const problems = [];
   if (!m || typeof m !== "object") return ["manifest is not an object"];
   if (!/^[a-z][a-z0-9_-]{1,40}$/.test(m.name || "")) problems.push("name must be lowercase letters, digits, - or _");
+  if (CATALOG_MAP[m.name]) problems.push(`"${m.name}" is a catalog kit name; personal kits need a different name`);
   if (!m.version) problems.push("version missing");
-  if (!Array.isArray(m.origins) || !m.origins.length) problems.push("origins must be a non-empty array of match patterns");
+  if (!Array.isArray(m.origins) || !m.origins.length) problems.push("origins must be a non-empty array");
   for (const o of m.origins || []) if (!/^https?:\/\/[^/]+\/\*$/.test(o)) problems.push(`origin ${o} must look like https://host/*`);
   if (!m.home) problems.push("home URL missing");
   if (!Array.isArray(m.tools) || !m.tools.length) problems.push("tools must be a non-empty array");
   for (const t of m.tools || []) {
     if (!/^[a-z][a-z0-9_]{1,40}$/.test(t.name || "")) problems.push(`tool name ${t.name} invalid`);
     if (!t.description) problems.push(`tool ${t.name} has no description`);
+    if (t.category && !(m.categories || {})[t.category]) problems.push(`tool ${t.name} names category ${t.category} not in categories`);
   }
+  for (const [k, c] of Object.entries(m.categories || {})) if (typeof c.dailyLimit !== "number") problems.push(`category ${k} has no numeric dailyLimit`);
   return problems;
 }
-
-// The curated index: the only source the extension installs from unless developer mode is on.
-export const INDEX_URL = "https://raw.githubusercontent.com/samlevan/agentscripts/main/index/kits.json";
-export const DEV_INDEX_URL = "http://127.0.0.1:4890/index/kits.json";
-
-export async function fetchIndex() {
+export async function fetchKit(source) {
   const settings = await getSettings();
-  const urls = settings.developerMode ? [DEV_INDEX_URL, INDEX_URL] : [INDEX_URL];
-  const errors = [];
-  for (const url of urls) {
-    try {
-      const r = await fetch(url, { cache: "no-store" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const j = await r.json();
-      return { url, kits: (j.kits || []).filter((k) => k.source), dev: url === DEV_INDEX_URL };
-    } catch (e) { errors.push(`${url}: ${e.message}`); }
-  }
-  throw new Error("index unavailable: " + errors.join("; "));
-}
-
-// fromIndex: the source came from the curated index (always allowed). Anything else needs developer mode.
-export async function fetchKit(source, { fromIndex = false } = {}) {
+  if (!settings.developerMode) throw new Error("Turn on developer mode to load a personal kit from your machine.");
   const { base, pin, kind } = resolveSource(source);
-  const settings = await getSettings();
-  if (!fromIndex && !settings.developerMode) {
-    throw new Error("Only kits from the curated index can be installed. Developer mode allows any source.");
-  }
   const mres = await fetch(base + "manifest.json", { cache: "no-store" });
   if (!mres.ok) throw new Error(`manifest.json: HTTP ${mres.status}`);
   const manifest = await mres.json();
@@ -90,47 +102,28 @@ export async function fetchKit(source, { fromIndex = false } = {}) {
     if (!r.ok) throw new Error(`${file}: HTTP ${r.status}`);
     tools[t.name] = await r.text();
   }
-  let skill = "";
-  try { const s = await fetch(base + "SKILL.md", { cache: "no-store" }); if (s.ok) skill = await s.text(); } catch {}
-  return { name: manifest.name, source, base, pin, kind, fromIndex, manifest, tools, skill, installedAt: Date.now(), allowDestructive: false };
+  return { name: manifest.name, source, base, pin, kind, manifest, tools, source_kind: "personal" };
+}
+export async function installPersonal(kit) {
+  const per = await getPersonal();
+  const prev = per[kit.name];
+  per[kit.name] = { manifest: kit.manifest, tools: kit.tools, source: kit.source, pin: kit.pin, allowDestructive: prev?.allowDestructive || false, limits: prev?.limits || null, installedAt: Date.now() };
+  await savePersonal(per);
 }
 
-export async function installKit(kit) {
-  const kits = await getKits();
-  const prev = kits[kit.name];
-  if (prev) kit.allowDestructive = prev.allowDestructive;
-  kits[kit.name] = kit;
-  await saveKits(kits);
-  return kit;
-}
-
-export async function removeKit(name) {
-  const kits = await getKits();
-  delete kits[name];
-  await saveKits(kits);
-}
-
+// ---- shared flag / limit writes (route to the right store) ----
 export async function setKitFlag(name, key, value) {
-  const kits = await getKits();
-  if (!kits[name]) throw new Error("kit not installed: " + name);
-  kits[name][key] = value;
-  await saveKits(kits);
+  if (CATALOG_MAP[name]) { const c = await getCatalogState(); if (!c[name]) throw new Error("catalog kit not installed"); c[name][key] = value; await saveCatalogState(c); return; }
+  const p = await getPersonal(); if (!p[name]) throw new Error("kit not installed"); p[name][key] = value; await savePersonal(p);
+}
+export async function setKitLimits(name, limits) {
+  if (CATALOG_MAP[name]) { const c = await getCatalogState(); if (!c[name]) throw new Error("catalog kit not installed"); c[name].limits = limits; await saveCatalogState(c); return; }
+  const p = await getPersonal(); if (!p[name]) throw new Error("kit not installed"); p[name].limits = limits; await savePersonal(p);
 }
 
-// The tool descriptions the host publishes over MCP.
 export function describeKits(kits) {
   return Object.values(kits).map((k) => ({
-    name: k.name,
-    version: k.manifest.version,
-    description: k.manifest.description || "",
-    origins: k.manifest.origins,
-    pin: k.pin,
-    tools: k.manifest.tools.map((t) => ({
-      name: t.name,
-      description: t.description,
-      inputSchema: t.inputSchema || { type: "object", properties: {} },
-      destructive: !!t.destructive,
-      page: t.page || null,
-    })),
+    name: k.name, version: k.manifest.version, description: k.manifest.description || "", origins: k.manifest.origins, pin: k.pin, source: k.source,
+    tools: k.manifest.tools.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema || { type: "object", properties: {} }, destructive: !!t.destructive, page: t.page || null })),
   }));
 }

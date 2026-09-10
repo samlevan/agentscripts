@@ -1,5 +1,6 @@
 // Lists recent LinkedIn conversations from the messaging inbox (Voyager messaging GraphQL, same-origin).
-async function run(args, ctx) {
+async function run(args) {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const count = Math.min(Number(args.count) || 20, 100);
   const category = (args.category || "PRIMARY_INBOX").toUpperCase(); // PRIMARY_INBOX = Focused, SECONDARY_INBOX = Other
   const since = args.since ? (typeof args.since === "number" ? args.since : Date.parse(args.since)) : 0;
@@ -56,7 +57,7 @@ async function run(args, ctx) {
     }
     cursor = (data.metadata && data.metadata.nextCursor) || null;
     if (!cursor) break;
-    await ctx.sleep(800);
+    await sleep(800);
   }
   return { mailbox: category, count: out.length, conversations: out };
 }

@@ -1,7 +1,7 @@
-// agentscripts service worker: native port to the host, tool execution, audit log.
-import { getKits, describeKits, getSettings } from "./kits.js";
+// apiforanysite service worker: native port to the host, tool execution, audit log.
+import { getKits, describeKits, getSettings, effectiveLimits, toolCategory, catalogRun } from "./kits.js";
 
-const HOST = "com.agentscripts.host";
+const HOST = "com.apiforanysite.host";
 const AUDIT_MAX = 500;
 let port = null;
 let hostInfo = null; // {port, version} reported by the host
@@ -58,10 +58,10 @@ async function onHostMessage(msg) {
       const result = await runTool(msg.kit, msg.tool, msg.args || {});
       outcome = { ok: true, result };
     } catch (e) {
-      outcome = { ok: false, error: String(e && e.message || e) };
+      outcome = { ok: false, error: String(e && e.message || e), limited: !!(e && e.limited) };
     }
     send({ type: "result", id: msg.id, ...outcome });
-    await audit({ at: started, ms: Date.now() - started, kit: msg.kit, tool: msg.tool, args: msg.args || {}, ok: outcome.ok, error: outcome.error || null });
+    await audit({ at: started, ms: Date.now() - started, kit: msg.kit, tool: msg.tool, args: msg.args || {}, ok: outcome.ok, error: outcome.error || null, limited: !!outcome.limited });
   }
 }
 
@@ -71,6 +71,38 @@ async function audit(rec) {
   auditLog.unshift(rec);
   if (auditLog.length > AUDIT_MAX) auditLog.length = AUDIT_MAX;
   await chrome.storage.local.set({ auditLog });
+}
+
+
+// ---------- rate limits ----------
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+async function usageForKit(kit) {
+  const { auditLog = [] } = await chrome.storage.local.get("auditLog");
+  const since = Date.now() - DAY_MS;
+  const recent = auditLog.filter((r) => r.kit === kit.name && r.ok && r.at >= since && !r.limited);
+  const lim = effectiveLimits(kit);
+  const byCat = {};
+  for (const k of Object.keys(lim.categories)) byCat[k] = 0;
+  let total = 0;
+  for (const r of recent) {
+    const c = toolCategory(kit, r.tool);
+    if (c && byCat[c] != null) byCat[c]++;
+    total++;
+  }
+  const categories = {};
+  for (const [k, c] of Object.entries(lim.categories)) categories[k] = { label: c.label, help: c.help, used: byCat[k] || 0, limit: c.dailyLimit };
+  return { categories, overall: { used: total, limit: lim.overall }, windowHours: 24 };
+}
+
+// Throws a clear, agent-actionable error if this call would cross a cap.
+async function enforceLimits(kit, toolName) {
+  const cat = toolCategory(kit, toolName);
+  const u = await usageForKit(kit);
+  if (u.overall.limit != null && u.overall.used >= u.overall.limit)
+    throw new Error(`daily cap reached: ${u.overall.used}/${u.overall.limit} total ${kit.name} actions in the last 24h. It resets as older calls age out. Raise it in the extension's Daily limits, or wait.`);
+  if (cat && u.categories[cat] && u.categories[cat].used >= u.categories[cat].limit)
+    throw new Error(`daily cap reached: ${u.categories[cat].used}/${u.categories[cat].limit} ${u.categories[cat].label} calls in the last 24h. It resets as older calls age out. Raise it in the extension's Daily limits, or wait.`);
 }
 
 // ---------- tabs ----------
@@ -138,15 +170,14 @@ async function runTool(kitName, toolName, args) {
   if (!kit) throw new Error(`kit not installed: ${kitName}`);
   const spec = kit.manifest.tools.find((t) => t.name === toolName);
   if (!spec) throw new Error(`tool not found: ${kitName}.${toolName}`);
-  const code = kit.tools[toolName];
-  if (!code) throw new Error(`tool source missing: ${kitName}.${toolName}`);
   if (spec.destructive) {
     if (!kit.allowDestructive) throw new Error(`refused: ${kitName}.${toolName} is destructive and the kit's "allow destructive tools" switch is off (extension popup).`);
     if (args.confirm !== true) throw new Error(`refused: ${kitName}.${toolName} is destructive; pass confirm: true after the user has approved this specific call.`);
   }
-  if (!chrome.userScripts) throw new Error('user scripts are not enabled: open the extension details page and turn on "Allow User Scripts".');
+  try { await enforceLimits(kit, toolName); }
+  catch (e) { const err = new Error(e.message); err.limited = true; throw err; }
   const granted = await chrome.permissions.contains({ origins: kit.manifest.origins });
-  if (!granted) throw new Error(`origin permission not granted for ${kit.manifest.origins.join(", ")}; reinstall the kit from the popup.`);
+  if (!granted) throw new Error(`origin permission not granted for ${kit.manifest.origins.join(", ")}; reinstall the kit.`);
 
   // A tool without a fixed page may ask for one per call, as long as it stays inside the kit's origins.
   let page = spec.page || null;
@@ -158,25 +189,45 @@ async function runTool(kitName, toolName, args) {
   const tab = await chrome.tabs.get(tabId);
   if (!matchesOrigins(tab.url, kit.manifest.origins)) throw new Error(`tab left the kit's origins (${tab.url})`);
 
+  if (kit.source === "catalog") {
+    // Catalog kit: reviewed code bundled in this package, run via the extension's own injection (no user-scripts
+    // toggle). Egress is bounded by the extension's host permissions; trust comes from review.
+    const fn = catalogRun(kit.name, toolName);
+    if (!fn) throw new Error(`catalog tool missing: ${kitName}.${toolName}`);
+    let res;
+    try { [res] = await chrome.scripting.executeScript({ target: { tabId }, world: "ISOLATED", func: fn, args: [args] }); }
+    catch (e) { throw new Error((e && e.message) || String(e)); }
+    const out = res && res.result;
+    if (out && out.__ok === false) throw new Error(out.error);
+    return out ? out.value : null;
+  }
+
+  // Personal kit: the user's own code, run via the User Scripts API in an isolated per-kit world whose
+  // egress is fenced by CSP to the kit's own declared origins (the exfiltration fence for unreviewed code).
+  if (!chrome.userScripts) throw new Error('user scripts are not enabled: open the extension details page and turn on "Allow User Scripts".');
+  const code = kit.tools[toolName];
+  if (!code) throw new Error(`tool source missing: ${kitName}.${toolName}`);
+  const worldId = "kit_" + kit.name.replace(/[^A-Za-z0-9_-]/g, "_");
+  const cspSrc = kit.manifest.origins.map((o) => o.replace(/\/\*$/, "")).join(" ");
+  try { await chrome.userScripts.configureWorld({ worldId, csp: `default-src 'self'; connect-src ${cspSrc}; script-src 'self'`, messaging: false }); } catch (e) { console.warn("configureWorld failed", e); }
   const wrapped = `(async () => {
-    const args = ${JSON.stringify(args)};
-    const ctx = { origin: location.origin, url: location.href, log: (...a) => console.log("[agentscripts:${kitName}.${toolName}]", ...a),
-      sleep: (ms) => new Promise((r) => setTimeout(r, ms)) };
-    ${code}
-    if (typeof run !== "function") throw new Error("tool defines no run(args, ctx)");
-    const out = await run(args, ctx);
-    return out === undefined ? null : out;
+    try {
+      const args = ${JSON.stringify(args)};
+      const ctx = { origin: location.origin, url: location.href, log: (...a) => console.log("[apiforanysite:${kitName}.${toolName}]", ...a),
+        sleep: (ms) => new Promise((r) => setTimeout(r, ms)) };
+      ${code}
+      if (typeof run !== "function") throw new Error("tool defines no run(args)");
+      const out = await run(args, ctx);
+      return { __ok: true, value: out === undefined ? null : out };
+    } catch (e) { return { __ok: false, error: (e && e.message) || String(e) }; }
   })()`;
-  const results = await chrome.userScripts.execute({
-    target: { tabId },
-    js: [{ code: wrapped }],
-    world: "USER_SCRIPT",
-    injectImmediately: true,
-  });
+  const results = await chrome.userScripts.execute({ target: { tabId }, js: [{ code: wrapped }], world: "USER_SCRIPT", worldId, injectImmediately: true });
   const r = results && results[0];
   if (!r) throw new Error("no result from tab");
   if (r.error) throw new Error(typeof r.error === "string" ? r.error : (r.error.message || JSON.stringify(r.error)));
-  return r.result;
+  const out = r.result;
+  if (out && out.__ok === false) throw new Error(out.error);
+  return out ? out.value : null;
 }
 
 // ---------- world config ----------
@@ -195,6 +246,10 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     } else if (msg.type === "kits.changed") {
       await publishKits();
       reply({ ok: true });
+    } else if (msg.type === "usage") {
+      const kits = await getKits();
+      const kit = kits[msg.kit];
+      reply(kit ? { ok: true, usage: await usageForKit(kit) } : { ok: false, error: "kit not installed" });
     } else if (msg.type === "run") {
       try { reply({ ok: true, result: await runTool(msg.kit, msg.tool, msg.args || {}) }); }
       catch (e) { reply({ ok: false, error: String(e.message || e) }); }
@@ -205,6 +260,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   return true;
 });
 
+chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 chrome.runtime.onInstalled.addListener(() => { configureWorld(); connect(); });
 chrome.runtime.onStartup.addListener(() => { configureWorld(); connect(); });
 configureWorld();

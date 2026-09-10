@@ -1,6 +1,7 @@
 // Lists pending received invitations from the invitation manager page (server-rendered; selectors are structural,
 // never class-based, because LinkedIn's class names are hashed).
-async function run(args, ctx) {
+async function run(args) {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const max = Math.min(Number(args.count) || 50, 200);
   // Expand truncated notes so the full message is captured.
   for (const b of [...document.querySelectorAll("button")].filter((b) => /show more/i.test(b.textContent))) { try { b.click(); } catch {} }
@@ -11,7 +12,7 @@ async function run(args, ctx) {
     const more = [...document.querySelectorAll("button")].find((b) => /^(load more|show more results|see more)/i.test(b.textContent.trim()));
     if (!more) break;
     more.click();
-    await ctx.sleep(1500);
+    await sleep(1500);
   }
   const cardOf = (btn) => { let c = btn.parentElement; while (c && c.parentElement && c.parentElement !== document.body && [...c.parentElement.querySelectorAll("button")].filter((b) => b.textContent.trim() === "Ignore").length === 1) c = c.parentElement; return c && c.querySelector('a[href*="/in/"]') ? c : null; };
   const items = [];

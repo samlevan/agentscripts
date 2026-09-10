@@ -1,0 +1,143 @@
+{
+  "name": "reddit",
+  "version": "0.1.0",
+  "description": "Read Reddit from your own logged-in session: list a subreddit or your front page, search, and read a post with its comments. Read-only; never posts or votes.",
+  "origins": [
+    "https://www.reddit.com/*"
+  ],
+  "home": "https://www.reddit.com/",
+  "categories": {
+    "reads": {
+      "label": "Reads",
+      "dailyLimit": 200,
+      "help": "Listing, searching, and reading posts."
+    }
+  },
+  "dailyLimit": 200,
+  "tools": [
+    {
+      "name": "list_posts",
+      "category": "reads",
+      "description": "List posts from a subreddit, or your front page if none given: title, subreddit, author, score, comment count, permalink, and self-text.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "subreddit": {
+            "type": "string",
+            "description": "e.g. 'linux' or 'r/linux'; omit for your front page"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "hot",
+              "new",
+              "top",
+              "best",
+              "rising"
+            ],
+            "default": "hot"
+          },
+          "time": {
+            "type": "string",
+            "enum": [
+              "hour",
+              "day",
+              "week",
+              "month",
+              "year",
+              "all"
+            ],
+            "description": "for top"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 25
+          },
+          "max_chars": {
+            "type": "integer",
+            "default": 500
+          }
+        }
+      }
+    },
+    {
+      "name": "search",
+      "category": "reads",
+      "description": "Search Reddit site-wide, or within one subreddit if given. Returns matching posts with a short snippet.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "subreddit": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "relevance",
+              "hot",
+              "top",
+              "new",
+              "comments"
+            ],
+            "default": "relevance"
+          },
+          "time": {
+            "type": "string",
+            "enum": [
+              "hour",
+              "day",
+              "week",
+              "month",
+              "year",
+              "all"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "default": 25
+          }
+        }
+      }
+    },
+    {
+      "name": "read_post",
+      "category": "reads",
+      "description": "Read one post in full plus its comment tree, by permalink (from list_posts or search). Comments are flattened with a depth number.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "permalink"
+        ],
+        "properties": {
+          "permalink": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "top",
+              "best",
+              "new",
+              "controversial"
+            ],
+            "default": "top"
+          },
+          "max_comments": {
+            "type": "integer",
+            "default": 40
+          },
+          "max_chars": {
+            "type": "integer",
+            "default": 600
+          }
+        }
+      }
+    }
+  ]
+}

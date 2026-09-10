@@ -1,0 +1,80 @@
+<!doctype html><html><head><meta charset="utf-8"><title>API for Any Site — first run</title>
+<style>
+  @font-face{font-family:'JB';font-weight:400;src:url('../../extension/fonts/jetbrains-mono-400.woff2') format('woff2')}
+  @font-face{font-family:'JB';font-weight:500;src:url('../../extension/fonts/jetbrains-mono-500.woff2') format('woff2')}
+  @font-face{font-family:'JB';font-weight:700;src:url('../../extension/fonts/jetbrains-mono-700.woff2') format('woff2')}
+  :root{--bg:#0f1115;--panel:#12161c;--line:#1b2027;--line2:#232a33;--ink:#e6edf3;--dim:#8b949e;--faint:#586069;--green:#5ee0a0;--red:#d9634a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#c9d1d9;font:400 14.5px/1.6 'JB',ui-monospace,monospace}
+  .wrap{max-width:720px;margin:0 auto;padding:0 18px 60px}
+  header{position:sticky;top:0;background:var(--bg);padding:18px 0 12px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center}
+  .brand{font-weight:700;font-size:17px;color:var(--ink)}.brand .dot{color:var(--green)}
+  .pill{font-size:12.5px;color:var(--faint)}.pill.on{color:var(--green)}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-top:12px}
+  h3{margin:0 0 10px;font-size:11.5px;font-weight:500;text-transform:uppercase;letter-spacing:.12em;color:#6b7684}
+  .hero{padding:26px 20px 22px;text-align:left;border:1px solid var(--line);background:radial-gradient(120% 100% at 0% 0%, #14201a 0%, var(--panel) 55%);border-radius:8px;margin-top:14px}
+  .hero .big{font-size:22px;font-weight:700;color:var(--ink);line-height:1.35;letter-spacing:-.01em;margin:0 0 10px}
+  .hero .sub{font-size:14px;color:var(--dim);margin:0}
+  .hero .big .g{color:var(--green)}
+  .how{display:grid;gap:12px}
+  .beat{display:flex;gap:12px;align-items:flex-start}
+  .beat .n{color:var(--green);font-weight:700;flex:none;width:18px}
+  .beat .t{color:var(--ink);font-size:14px}
+  .beat .t b{font-weight:500}
+  .beat .t span{color:var(--dim)}
+  .step{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-top:1px solid var(--line)}
+  .step:first-child{border-top:0}
+  .step .box{flex:none;width:18px;height:18px;border-radius:4px;border:1px solid var(--line2);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:12px;margin-top:2px}
+  .step.done .box{background:var(--green);border-color:var(--green);color:#0b1a12}
+  .step .body{flex:1}
+  .step .h{color:var(--ink);font-size:14.5px}
+  .step .d{color:var(--dim);font-size:13px;margin-top:2px}
+  .step .d code{color:var(--green)}
+  .step.done .h{color:var(--dim)}
+  .cmd{margin-top:8px;background:#0b0d11;border:1px solid var(--line2);border-radius:6px;padding:8px 10px;font-size:12.5px;color:var(--green);display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .cmd button,.act{font:inherit;font-size:12px;background:var(--line);border:1px solid var(--line2);color:#c9d1d9;padding:4px 10px;border-radius:5px;cursor:pointer}
+  .act.primary{background:var(--green);color:#0b1a12;border:0;font-weight:500}
+  .reveal{color:var(--green);font-size:13px;cursor:pointer}
+  .muted{color:var(--dim);font-size:13px}
+  .why{font-size:13px;color:var(--dim)}
+  .why b{color:var(--ink);font-weight:500}
+</style></head>
+<body><div class="wrap">
+<header><span class="brand">agent<span class="dot">·</span>scripts</span><span class="pill on">host connected</span></header>
+
+<div class="hero">
+  <p class="big">An <span class="g">API for the web</span> — even for the sites that never built one.</p>
+  <p class="sub">Your agent has no built-in tools for most sites, so it improvises: reading and clicking pages, screenshot by screenshot — <span class="hi">slow, unreliable, and burning tokens</span> the whole way. API for Any Site installs small kits that give it direct, API-like tools instead: fast, reliable calls that return just the data, at a fraction of the cost. The API a site never published, running in your own logged-in session.</p>
+</div>
+
+<section>
+  <h3>How it works</h3>
+  <div class="how">
+    <div class="beat"><span class="n">1</span><span class="t"><b>Install a kit for a site.</b> <span>LinkedIn, Gmail, and more.</span></span></div>
+    <div class="beat"><span class="n">2</span><span class="t"><b>Your agent gets direct tools for it.</b> <span>“list my invitations” as one fast call — not a page it has to read and click through.</span></span></div>
+    <div class="beat"><span class="n">3</span><span class="t"><b>Calls run in your own browser.</b> <span>As quick as an API, capped by limits you set, every call logged.</span></span></div>
+  </div>
+</section>
+
+<section>
+  <h3>Get started</h3>
+  <div class="step done"><span class="box">✓</span><div class="body"><div class="h">Turn on user scripts</div><div class="d">Done. This lets kits run their tools in the page.</div></div></div>
+  <div class="step"><span class="box"></span><div class="body">
+    <div class="h">Connect your agent</div>
+    <div class="d">Point your AI agent at API for Any Site once. <span class="reveal">Show me how ›</span></div>
+    <div class="cmd"><span>claude mcp add --transport http apiforanysite http://127.0.0.1:4890/mcp</span><button>copy</button></div>
+    <div class="muted" style="margin-top:6px">Using a different agent? Any tool that speaks MCP works.</div>
+  </div></div>
+  <div class="step"><span class="box"></span><div class="body">
+    <div class="h">Install your first kit</div>
+    <div class="d">Start with LinkedIn: triage your invitations and inbox.</div>
+    <div style="margin-top:8px"><button class="act primary">Browse kits →</button></div>
+  </div></div>
+</section>
+
+<section>
+  <h3>Why not just let my agent use the page?</h3>
+  <p class="why">An agent driving a web page has to look, screenshot, and click. That is <b>slow</b>, it <b>breaks</b> when the page changes, and it is <b>expensive</b> — every screenshot and page it reads burns tokens. A kit turns all of it into <b>one direct tool call</b> that returns just the data it needs: faster, sturdier, and a fraction of the cost. It works with any agent, and the daily limits and audit log come along for free.</p>
+</section>
+
+</div></body></html>
