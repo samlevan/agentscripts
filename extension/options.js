@@ -45,21 +45,8 @@ async function renderGallery(kits, status) {
   $("#console").hidden = !setUp;
   if (!setUp) { renderOnboarding(status, kits); return; }
 
-  if (status?.hostInfo?.port) {
-    const p = status.hostInfo.port;
-    const endpoint = `http://127.0.0.1:${p}/mcp`;
-    const cmd = `claude mcp add --transport http apiforanysite ${endpoint}`;
-    $("#mcp").innerHTML = `<div class="muted" style="margin-bottom:10px">Your AI agent connects to this extension to use your installed kits. The extension is the bridge, not the agent. Point your agent at it once, then ask it to do things on your sites.</div>
-      <div style="margin-bottom:5px">In <b>Claude Code</b>, run this:</div>
-      <div class="copyrow" style="margin-bottom:10px"><code>${cmd}</code><button data-copy="${cmd}">copy</button></div>
-      <div class="muted" style="margin-bottom:5px">Any other MCP-capable agent, add this endpoint:</div>
-      <div class="copyrow"><code>${endpoint}</code><button data-copy="${endpoint}">copy</button></div>`;
-    $("#mcp").querySelectorAll("button[data-copy]").forEach((b) => b.addEventListener("click", () => {
-      navigator.clipboard.writeText(b.dataset.copy).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1200); });
-    }));
-  } else {
-    $("#mcp").textContent = "Host not connected. Run apiforanysite-host install, then reload the extension.";
-  }
+  if (status?.hostInfo?.port) renderAgent(status.hostInfo.port);
+  else $("#mcp").textContent = "Host not connected. Run apiforanysite-host install, then reload the extension.";
 
   const box = $("#installed");
   box.innerHTML = "";
@@ -85,6 +72,40 @@ async function renderGallery(kits, status) {
     d.textContent = `${new Date(r.at).toLocaleTimeString()}  ${r.kit}.${r.tool} ${JSON.stringify(r.args)}  ${r.ok ? "ok" : "ERR " + r.error} ${r.ms}ms`;
     log.appendChild(d);
   }
+}
+
+
+// The AGENT section, one connect flow per agent.
+const AGENT_GUIDE = "https://github.com/apiforanysite/apiforanysite/blob/main/docs/grok-bot.md";
+function renderAgent(port) {
+  const endpoint = `http://127.0.0.1:${port}/mcp`;
+  const cmd = `claude mcp add --transport http apiforanysite ${endpoint}`;
+  const copyrow = (v) => `<div class="copyrow"><code>${v}</code><button data-copy="${v}">copy</button></div>`;
+  const tabs = {
+    "Claude Code": `<div class="muted" style="margin-bottom:6px">Run this in Claude Code, on the same machine as this browser:</div>${copyrow(cmd)}`,
+    "Grok Bot": (() => {
+      const prompt = `Set up the API for Any Site browser extension by following this guide: ${AGENT_GUIDE}. Clone the repo, build the catalog, install the native messaging host pointed at your own Chrome profile with --user-data-dir, load the unpacked extension, and install the LinkedIn kit. Then connect to its MCP endpoint ${endpoint} and list my LinkedIn invitations.`;
+      return `<div class="muted" style="margin-bottom:6px">Grok Bot is an autonomous agent in its own VM. Copy this and paste it into Grok Bot, it will read the guide, install the extension, connect, and run the task:</div>
+        <div class="promptbox"><div class="p">${prompt}</div><button data-copy="${prompt}">copy prompt</button></div>
+        <div class="muted" style="margin-top:8px">The guide it follows: <a href="${AGENT_GUIDE}" target="_blank">docs/grok-bot.md &#8599;</a></div>`;
+    })(),
+    "Other agent": `<div class="muted" style="margin-bottom:6px">Add this MCP endpoint in your agent. It must run on this machine, the address is your own computer:</div>${copyrow(endpoint)}`,
+  };
+  const names = Object.keys(tabs);
+  const active = names.includes(window.__agentTab) ? window.__agentTab : names[0];
+  $("#mcp").innerHTML = `<div class="muted" style="margin-bottom:12px">Your AI agent connects to this extension to use your installed kits. The extension is the bridge, not the agent.</div>
+    <div class="tabs">${names.map((n) => `<button class="tab" data-tab="${n}">${n}</button>`).join("")}</div><div id="agent-body"></div>`;
+  const setActive = (name) => {
+    window.__agentTab = name;
+    $("#mcp").querySelectorAll(".tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
+    const body = $("#agent-body");
+    body.innerHTML = tabs[name];
+    body.querySelectorAll("button[data-copy]").forEach((b) => b.addEventListener("click", () => {
+      navigator.clipboard.writeText(b.dataset.copy).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1200); });
+    }));
+  };
+  $("#mcp").querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => setActive(b.dataset.tab)));
+  setActive(active);
 }
 
 $("#addkit").addEventListener("click", () => go("browse"));

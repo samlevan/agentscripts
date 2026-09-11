@@ -97,6 +97,13 @@
   .step .d{color:var(--dim);font-size:13px;margin-top:2px}
   .cmd{margin-top:8px;background:#0b0d11;border:1px solid var(--line2);border-radius:6px;padding:8px 10px;font-size:12.5px;color:var(--green);display:flex;justify-content:space-between;gap:10px;align-items:center}
   .why{font-size:13px;color:var(--dim)}.why b{color:var(--ink);font-weight:500}
+  .promptbox { background:#0b0d11; border:1px solid var(--line2); border-radius:6px; padding:10px 12px; font-size:13px; color:#c9d1d9; }
+  .promptbox .p { white-space:pre-wrap; word-break:break-word; }
+  .promptbox button { font:inherit; font-size:12px; background:var(--line); border:1px solid var(--line2); color:#c9d1d9; padding:4px 10px; border-radius:5px; margin-top:9px; }
+  .tabs { display:flex; gap:8px; margin-bottom:14px; }
+  .tab { font:inherit; font-size:12.5px; padding:5px 12px; border:1px solid var(--line2); border-radius:6px; color:var(--dim); cursor:pointer; background:none; }
+  .tab.on { border-color:var(--green); color:var(--green); }
+  .tab:hover { color:var(--ink); }
   .copyrow { display:flex; align-items:center; gap:8px; background:#0b0d11; border:1px solid var(--line2); border-radius:6px; padding:8px 10px; }
   .copyrow code { flex:1; min-width:0; overflow-x:auto; white-space:nowrap; }
   .copyrow code::-webkit-scrollbar { height:0; }
