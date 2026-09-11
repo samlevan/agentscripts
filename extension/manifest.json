@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "API for Any Site",
   "version": "0.1.0",
-  "description": "Typed, installable per-site tools that an AI agent on this machine can call inside your own logged-in browser.",
+  "description": "Give your AI agent direct tools for the sites you use, running in your own browser. Install a website kit per site. LinkedIn first.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsZc46ozEg8YqhWscgbfKytUfY2ajm+YHW4R0vxGemBhtW8+Ebuoh+h5vOJhHv2GaulyeBsSA45vTjhVUHnM1/hLuXmdLEO6R7RR4EfKtih2ULgb9ndkY26mNLvb2uN5XLBe2IhX5Orte5kSQ9swxZpCesD+vVKFdZ7T5sBV68uUSlLVtcZNr8soKcfkQO6Wfvj/F1H9jTFM+46LK9cjuWEW3DJarfZyX/qODLDEl6d6yhXQKW3/bJai8gG4dixWu8pjuPD8jakpsta6ZsTbEwO0QlHUOCahXJRDMnG4RXWdgTAJWDhc50FTBOLYP7P8fB4znvLSnCpIA3zvCbgMypwIDAQAB",
   "permissions": [
     "userScripts",
