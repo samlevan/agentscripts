@@ -23,6 +23,11 @@ Decisions live in `design.md`, the technical breakdown in `plan.md`.
 - Personal kits you write run under a browser fence that can only reach their own site (verified: a foreign fetch is blocked).
 - Both: a tool runs only in a tab on its declared origins; destructive tools are gated per call (switch + `confirm: true`); every call is audit-logged.
 
+## Install
+
+- **Inside an agent VM (Grok Bot, a cloud desktop):** see [docs/grok-bot.md](docs/grok-bot.md). Verified end to end. The one gotcha is pointing the host at the agent's Chrome profile with `--user-data-dir`.
+- **Locally, to develop kits:** the developer setup below.
+
 ## Setup (developer)
 
 ```bash
