@@ -10,7 +10,7 @@
     {
       "name": "list_invitations",
       "page": "https://www.linkedin.com/mynetwork/invitation-manager/received/",
-      "description": "List pending received connection invitations: id (profile slug), name, headline, note (the message they attached, if any), mutual connection count, profile URL.",
+      "description": "List pending received connection invitations: id (profile slug), name, headline, company (their current company, read from the card's company logo; empty when they show none) with company_slug and company_url, note (the message they attached, if any), mutual connection count, profile URL.",
       "inputSchema": {
         "type": "object",
         "properties": {

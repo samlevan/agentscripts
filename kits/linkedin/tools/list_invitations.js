@@ -14,6 +14,8 @@ async function run(args) {
     more.click();
     await sleep(1500);
   }
+  // "colt_technology_services" -> "Colt Technology Services"; legal suffixes stay upper-case.
+  const companyName = (slug) => slug ? slug.split(/[_-]+/).filter(Boolean).map((w) => /^(llc|ltd|inc|plc|gmbh|pvt|sas|srl|ag|bv|sa|co)$/i.test(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : "";
   const cardOf = (btn) => { let c = btn.parentElement; while (c && c.parentElement && c.parentElement !== document.body && [...c.parentElement.querySelectorAll("button")].filter((b) => b.textContent.trim() === "Ignore").length === 1) c = c.parentElement; return c && c.querySelector('a[href*="/in/"]') ? c : null; };
   const items = [];
   // Every pending card has an Ignore button; cards that carry a note hide Accept behind "Show more actions".
@@ -38,7 +40,16 @@ async function run(args) {
     const note = others.slice(1).filter((l) => l.length > 15).join(" ") || "";
     const mutualCount = mutual ? (Number((mutual.match(/(\d+) other/) || [])[1]) || 0) + 1 : 0;
     const hasNote = !![...card.querySelectorAll("button")].find((b) => (b.textContent.trim() || b.getAttribute("aria-label") || "") === "Show more actions");
-    items.push({ id: slug, name, headline, note, has_note: hasNote, mutual_connections: mutualCount, mutual_text: mutual, when, profile_url: href.split("?")[0] });
+    // The card's small company logo (empty alt, no link) carries the company's LinkedIn slug in
+    // its filename (".../martlenz_logo"), so the current company comes for free, even when the
+    // headline names none (verified 2026-09-12, 10 of 10 cards). No logo: no current company.
+    // The filename writes the company's vanity name with underscores ("hg_insights_logo"); the
+    // company page wants the hyphenated form (linkedin.com/company/hg-insights; the underscore
+    // form lands on /company/unavailable/, verified 2026-09-12).
+    const logo = card.querySelector('img[src*="company-logo"]');
+    const companySlug = (logo ? (logo.getAttribute("src").match(/\/\d+\/([^/?]+?)_logo\b/) || [])[1] || "" : "").replace(/_/g, "-");
+    const company = companyName(companySlug);
+    items.push({ id: slug, name, headline, company, company_slug: companySlug, company_url: companySlug ? `https://www.linkedin.com/company/${companySlug}/` : "", note, has_note: hasNote, mutual_connections: mutualCount, mutual_text: mutual, when, profile_url: href.split("?")[0] });
     if (items.length >= max) break;
   }
   return { count: items.length, invitations: items };
