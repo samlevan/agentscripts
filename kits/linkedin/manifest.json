@@ -144,7 +144,7 @@
     {
       "name": "remove_connection",
       "destructive": true,
-      "description": "Remove a 1st-degree connection. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Silent for them. dry_run stops before the confirmation.",
+      "description": "Remove a 1st-degree connection. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Silent for them. dry_run opens the confirmation, reports the button it would press, and cancels it.",
       "inputSchema": {
         "type": "object",
         "required": [

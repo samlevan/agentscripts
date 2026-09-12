@@ -8,8 +8,10 @@
 // My network > Manage > Sent, or it expires. args.dry_run stops before anything is sent.
 async function run(args) {
   const txt = (el) => (el.textContent || "").replace(/\s+/g, " ").trim();
-  const wantSlug = String(args.id || args.profile_url || "").trim().replace(/^https?:\/\/[^/]+\/in\//, "").replace(/\/.*$/, "");
-  const here = (location.pathname.match(/\/in\/([^/?#]+)/) || [])[1] || "";
+  // Compare decoded: LinkedIn keeps accented slugs percent-encoded in the URL (laïla -> la%C3%AFla).
+  const norm = (v) => { try { return decodeURIComponent(v); } catch { return v; } };
+  const here = norm((location.pathname.match(/\/in\/([^/?#]+)/) || [])[1] || "");
+  const wantSlug = norm(String(args.id || args.profile_url || "").trim().replace(/^https?:\/\/[^/]+\/in\//, "").replace(/\/.*$/, ""));
   if (!wantSlug) throw new Error("id (profile slug) or profile_url is required");
   if (here !== wantSlug) throw new Error(`this tab is on /in/${here}, not /in/${wantSlug}; pass the profile URL as page`);
   const note = typeof args.note === "string" ? args.note.trim() : "";

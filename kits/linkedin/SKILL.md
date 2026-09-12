@@ -18,7 +18,7 @@ Runs inside the user's own LinkedIn session in their browser. Every call is huma
 
 1. `linkedin.list_conversations` with `category: "PRIMARY_INBOX"` (Focused) and, separately, `"SECONDARY_INBOX"` (Other). Each row has the other participant, the last message and whether the user sent it.
 2. A thread where the last message is from them, arrived soon after connecting, and `read_thread` shows the user never replied is the pattern. `read_thread` returns every message with `from_me`, so "N messages, you sent 0" is the signal.
-3. Offer `remove_connection` for the ones the user wants gone. It needs `id` (slug) and `page` (their profile URL), is destructive (switch on + `confirm: true`), and is silent for the other person. `dry_run: true` stops before the confirmation.
+3. Offer `remove_connection` for the ones the user wants gone. It needs `id` (slug) and `page` (their profile URL), is destructive (switch on + `confirm: true`), and is silent for the other person. `dry_run: true` opens the confirmation, reports the button it would press, and cancels it.
 
 ## Connecting with someone, and undoing it
 
@@ -42,5 +42,5 @@ Runs inside the user's own LinkedIn session in their browser. Every call is huma
 - `linkedin.list_conversations` (count?: integer, category?: string (PRIMARY_INBOX|SECONDARY_INBOX), since?: string): List recent conversations from the messaging inbox: other participant (name, headline, distance, profile URL), last message (text, time, whether you sent it), unread count. category PRIMARY_INBOX is the Focused tab, SECONDARY_INBOX is Other.
 - `linkedin.read_thread` (conversation_id: string, max_messages?: integer): Read one conversation in full by conversation_id (from list_conversations): every message with sender, time, and whether you sent it. Use it to tell a pitch from a conversation.
 - `linkedin.connect` **destructive** (id: string, page: string, note?: string, dry_run?: boolean): Send a connection request to a profile. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Optional note (max 300 chars; free accounts get a few notes a month, and the tool reports when LinkedIn refuses one instead of sending without it). Reports the state if nothing is sent: pending, connected, or they_invited_you (use accept_invitation). dry_run reports what would be sent without sending.
-- `linkedin.remove_connection` **destructive** (id: string, page: string, dry_run?: boolean): Remove a 1st-degree connection. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Silent for them. dry_run stops before the confirmation.
+- `linkedin.remove_connection` **destructive** (id: string, page: string, dry_run?: boolean): Remove a 1st-degree connection. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Silent for them. dry_run opens the confirmation, reports the button it would press, and cancels it.
 <!-- tools:end -->
