@@ -9,7 +9,7 @@ Runs inside the user's own LinkedIn session in their browser. Every call is huma
 
 ## Invitation triage
 
-1. `linkedin.list_invitations` returns pending invitations with `id` (profile slug), name, headline, `note` (their attached message, if any) and mutual-connection count.
+1. `linkedin.list_invitations` returns pending invitations with `id` (profile slug), name, headline, `company` (their current company, from the card's logo; empty when they show none, plus `company_url`), `note` (their attached message, if any) and mutual-connection count.
 2. Apply the user's stated policy. If they have none, use the common rule: a real profile that is relevant (same field, community, alumni, local, or content they would want) gets in; a sales or business-development profile with no note gets ignored; a note changes a maybe into a yes.
 3. Present the decision per person and act only on what the user approves. `accept_invitation` is reversible later; `ignore_invitation` is not, so it is a destructive tool: the extension's switch for this kit must be on and the call must carry `confirm: true`.
 4. `dry_run: true` on accept or ignore reports what would be clicked without clicking. Use it when unsure the right card is targeted.
@@ -36,7 +36,7 @@ Runs inside the user's own LinkedIn session in their browser. Every call is huma
 ## Tools
 
 <!-- tools:begin (generated from manifest.json by scripts/gen-skill.js) -->
-- `linkedin.list_invitations` (count?: integer): List pending received connection invitations: id (profile slug), name, headline, note (the message they attached, if any), mutual connection count, profile URL.
+- `linkedin.list_invitations` (count?: integer): List pending received connection invitations: id (profile slug), name, headline, company (their current company, read from the card's company logo; empty when they show none) with company_slug and company_url, note (the message they attached, if any), mutual connection count, profile URL.
 - `linkedin.accept_invitation` (id: string, dry_run?: boolean): Accept one pending invitation by id (profile slug from list_invitations). Reversible later with remove_connection. dry_run reports what would be clicked.
 - `linkedin.ignore_invitation` **destructive** (id: string, dry_run?: boolean): Ignore one pending invitation by id. Not reversible: the sender is not told, but the invitation is gone. dry_run reports what would be clicked.
 - `linkedin.list_conversations` (count?: integer, category?: string (PRIMARY_INBOX|SECONDARY_INBOX), since?: string): List recent conversations from the messaging inbox: other participant (name, headline, distance, profile URL), last message (text, time, whether you sent it), unread count. category PRIMARY_INBOX is the Focused tab, SECONDARY_INBOX is Other.
