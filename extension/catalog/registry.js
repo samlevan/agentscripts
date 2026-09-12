@@ -233,6 +233,67 @@ async function linkedin__read_thread(args) {
   } catch (e) { return { __ok: false, error: (e && e.message) || String(e) }; }
 }
 
+async function linkedin__connect(args) {
+  try {
+    const __run = async () => {
+  const txt = (el) => (el.textContent || "").replace(/\s+/g, " ").trim();
+  const wantSlug = String(args.id || args.profile_url || "").trim().replace(/^https?:\/\/[^/]+\/in\//, "").replace(/\/.*$/, "");
+  const here = (location.pathname.match(/\/in\/([^/?#]+)/) || [])[1] || "";
+  if (!wantSlug) throw new Error("id (profile slug) or profile_url is required");
+  if (here !== wantSlug) throw new Error(`this tab is on /in/${here}, not /in/${wantSlug}; pass the profile URL as page`);
+  const note = typeof args.note === "string" ? args.note.trim() : "";
+  if (note.length > 300) throw new Error("note is over LinkedIn's 300-character limit");
+  const name = (document.title || "").replace(/\s*[|(].*$/, "").trim() || wantSlug;
+  const csrf = (document.cookie.match(/JSESSIONID="?([^";]+)/) || [])[1];
+  if (!csrf) throw new Error("not signed in to LinkedIn in this tab (no session cookie)");
+
+  // The top card is the block that holds "Contact info"; climb until the card's action row (More) is inside.
+  const anchor = [...document.querySelectorAll("button, a")].find((b) => txt(b) === "Contact info");
+  if (!anchor) throw new Error("profile top card not found (no Contact info control)");
+  const controls = (el) => [...el.querySelectorAll("button, a")];
+  const labelOf = (b) => b.getAttribute("aria-label") || txt(b);
+  const has = (el, re) => controls(el).some((b) => re.test(labelOf(b)));
+  let card = anchor.parentElement;
+  while (card && card.parentElement && card.parentElement !== document.body && !has(card, /^More$/)) card = card.parentElement;
+  const offersConnect = has(card, /^Invite .* to connect$/) || controls(card).some((b) => txt(b) === "Connect");
+  const state = has(card, /^Pending$|^Pending,|withdraw/i) ? "pending"
+    : has(card, /^Accept .* request to connect$/) ? "they_invited_you"
+    : (!offersConnect && has(card, /^Message$/) && !has(card, /^Follow$/)) ? "connected"
+    : "not_connected";
+  if (state === "pending") return { id: wantSlug, name, sent: false, state, reason: "an invitation to this person is already pending" };
+  if (state === "they_invited_you") return { id: wantSlug, name, sent: false, state, reason: "they already invited you; use accept_invitation instead" };
+  if (state === "connected") return { id: wantSlug, name, sent: false, state, reason: "already a 1st-degree connection" };
+
+  // Their profile URN rides on the top card's Message link (recipient=...).
+  const msg = controls(card).find((b) => /\/messaging\/compose\//.test(b.getAttribute("href") || ""));
+  const member = msg && (msg.getAttribute("href").match(/recipient=([A-Za-z0-9_-]+)/) || [])[1];
+  if (!member) throw new Error("could not read this profile's id from the top card (no Message link); nothing was sent");
+  const profileUrn = `urn:li:fsd_profile:${member}`;
+  if (args.dry_run) return { dry_run: true, id: wantSlug, name, state, profile_urn: profileUrn, would_send: note ? "invitation with note" : "invitation without a note", note: note || null };
+
+  const body = { invitee: { inviteeUnion: { memberProfile: profileUrn } } };
+  if (note) body.customMessage = note;
+  const url = "/voyager/api/voyagerRelationshipsDashMemberRelationships?action=verifyQuotaAndCreateV2&decorationId=com.linkedin.voyager.dash.deco.relationships.InvitationCreationResultWithInvitee-2";
+  const r = await fetch(url, {
+    method: "POST", credentials: "include",
+    headers: { "csrf-token": csrf, "x-restli-protocol-version": "2.0.0", "content-type": "application/json", accept: "application/vnd.linkedin.normalized+json+2.1" },
+    body: JSON.stringify(body),
+  });
+  const text = await r.text();
+  let data = null; try { data = JSON.parse(text); } catch (e) {}
+  if (!r.ok) {
+    const detail = (data && (data.message || data.code || (data.data && data.data.message))) || text.slice(0, 200);
+    if (/quota|limit|custom/i.test(detail) && note) return { id: wantSlug, name, sent: false, state, reason: `LinkedIn refused the note (${detail}); call again without a note to send anyway` };
+    throw new Error(`LinkedIn refused the invitation (HTTP ${r.status}): ${detail}`);
+  }
+  const invitation = data && data.data && (data.data.invitationUrn || (data.data.value && data.data.value.invitationUrn)) || null;
+  return { id: wantSlug, name, sent: true, state: "pending", with_note: !!note, invitation_urn: invitation };
+};
+    const __v = await __run();
+    return { __ok: true, value: __v === undefined ? null : __v };
+  } catch (e) { return { __ok: false, error: (e && e.message) || String(e) }; }
+}
+
 async function linkedin__remove_connection(args) {
   try {
     const __run = async () => {
@@ -386,13 +447,14 @@ async function reddit__read_post(args) {
 
 export const CATALOG = [
   {
-    manifest: {"name":"linkedin","version":"0.2.0","description":"LinkedIn invitations and inbox, read from your own logged-in session: list, accept or ignore pending invitations, list recent conversations, read a thread, remove a connection. Nothing sends on your behalf.","origins":["https://www.linkedin.com/*"],"home":"https://www.linkedin.com/feed/","tools":[{"name":"list_invitations","page":"https://www.linkedin.com/mynetwork/invitation-manager/received/","description":"List pending received connection invitations: id (profile slug), name, headline, note (the message they attached, if any), mutual connection count, profile URL.","inputSchema":{"type":"object","properties":{"count":{"type":"integer","description":"Max invitations to return (default 50)."}}},"category":"reads"},{"name":"accept_invitation","page":"https://www.linkedin.com/mynetwork/invitation-manager/received/","description":"Accept one pending invitation by id (profile slug from list_invitations). Reversible later with remove_connection. dry_run reports what would be clicked.","inputSchema":{"type":"object","required":["id"],"properties":{"id":{"type":"string"},"dry_run":{"type":"boolean"}}},"category":"actions"},{"name":"ignore_invitation","page":"https://www.linkedin.com/mynetwork/invitation-manager/received/","destructive":true,"description":"Ignore one pending invitation by id. Not reversible: the sender is not told, but the invitation is gone. dry_run reports what would be clicked.","inputSchema":{"type":"object","required":["id"],"properties":{"id":{"type":"string"},"dry_run":{"type":"boolean"}}},"category":"actions"},{"name":"list_conversations","page":"https://www.linkedin.com/messaging/","description":"List recent conversations from the messaging inbox: other participant (name, headline, distance, profile URL), last message (text, time, whether you sent it), unread count. category PRIMARY_INBOX is the Focused tab, SECONDARY_INBOX is Other.","inputSchema":{"type":"object","properties":{"count":{"type":"integer","description":"Max conversations (default 20, max 100)."},"category":{"type":"string","enum":["PRIMARY_INBOX","SECONDARY_INBOX"],"default":"PRIMARY_INBOX"},"since":{"type":"string","description":"ISO date; stop at conversations older than this."}}},"category":"reads"},{"name":"read_thread","page":"https://www.linkedin.com/messaging/","description":"Read one conversation in full by conversation_id (from list_conversations): every message with sender, time, and whether you sent it. Use it to tell a pitch from a conversation.","inputSchema":{"type":"object","required":["conversation_id"],"properties":{"conversation_id":{"type":"string"},"max_messages":{"type":"integer","default":50}}},"category":"reads"},{"name":"remove_connection","destructive":true,"description":"Remove a 1st-degree connection. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Silent for them. dry_run stops before the confirmation.","inputSchema":{"type":"object","required":["id","page"],"properties":{"id":{"type":"string","description":"profile slug"},"page":{"type":"string","description":"https://www.linkedin.com/in/<slug>/"},"dry_run":{"type":"boolean"}}},"category":"actions"}],"categories":{"reads":{"label":"Reads","dailyLimit":120,"help":"Listing invitations and conversations, reading a thread."},"actions":{"label":"Actions","dailyLimit":40,"help":"Accepting, ignoring, removing. These change your account."}},"dailyLimit":150},
+    manifest: {"name":"linkedin","version":"0.3.0","description":"LinkedIn invitations and inbox from your own logged-in session: list, accept or ignore pending invitations, list recent conversations, read a thread, send a connection request, remove a connection. Never sends a message.","origins":["https://www.linkedin.com/*"],"home":"https://www.linkedin.com/feed/","tools":[{"name":"list_invitations","page":"https://www.linkedin.com/mynetwork/invitation-manager/received/","description":"List pending received connection invitations: id (profile slug), name, headline, note (the message they attached, if any), mutual connection count, profile URL.","inputSchema":{"type":"object","properties":{"count":{"type":"integer","description":"Max invitations to return (default 50)."}}},"category":"reads"},{"name":"accept_invitation","page":"https://www.linkedin.com/mynetwork/invitation-manager/received/","description":"Accept one pending invitation by id (profile slug from list_invitations). Reversible later with remove_connection. dry_run reports what would be clicked.","inputSchema":{"type":"object","required":["id"],"properties":{"id":{"type":"string"},"dry_run":{"type":"boolean"}}},"category":"actions"},{"name":"ignore_invitation","page":"https://www.linkedin.com/mynetwork/invitation-manager/received/","destructive":true,"description":"Ignore one pending invitation by id. Not reversible: the sender is not told, but the invitation is gone. dry_run reports what would be clicked.","inputSchema":{"type":"object","required":["id"],"properties":{"id":{"type":"string"},"dry_run":{"type":"boolean"}}},"category":"actions"},{"name":"list_conversations","page":"https://www.linkedin.com/messaging/","description":"List recent conversations from the messaging inbox: other participant (name, headline, distance, profile URL), last message (text, time, whether you sent it), unread count. category PRIMARY_INBOX is the Focused tab, SECONDARY_INBOX is Other.","inputSchema":{"type":"object","properties":{"count":{"type":"integer","description":"Max conversations (default 20, max 100)."},"category":{"type":"string","enum":["PRIMARY_INBOX","SECONDARY_INBOX"],"default":"PRIMARY_INBOX"},"since":{"type":"string","description":"ISO date; stop at conversations older than this."}}},"category":"reads"},{"name":"read_thread","page":"https://www.linkedin.com/messaging/","description":"Read one conversation in full by conversation_id (from list_conversations): every message with sender, time, and whether you sent it. Use it to tell a pitch from a conversation.","inputSchema":{"type":"object","required":["conversation_id"],"properties":{"conversation_id":{"type":"string"},"max_messages":{"type":"integer","default":50}}},"category":"reads"},{"name":"connect","destructive":true,"description":"Send a connection request to a profile. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Optional note (max 300 chars; free accounts get a few notes a month, and the tool reports when LinkedIn refuses one instead of sending without it). Reports the state if nothing is sent: pending, connected, or they_invited_you (use accept_invitation). dry_run reports what would be sent without sending.","inputSchema":{"type":"object","required":["id","page"],"properties":{"id":{"type":"string","description":"profile slug"},"page":{"type":"string","description":"https://www.linkedin.com/in/<slug>/"},"note":{"type":"string","description":"Optional note to attach, 300 characters max."},"dry_run":{"type":"boolean"}}},"category":"invites"},{"name":"remove_connection","destructive":true,"description":"Remove a 1st-degree connection. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Silent for them. dry_run stops before the confirmation.","inputSchema":{"type":"object","required":["id","page"],"properties":{"id":{"type":"string","description":"profile slug"},"page":{"type":"string","description":"https://www.linkedin.com/in/<slug>/"},"dry_run":{"type":"boolean"}}},"category":"actions"}],"categories":{"reads":{"label":"Reads","dailyLimit":120,"help":"Listing invitations and conversations, reading a thread."},"actions":{"label":"Actions","dailyLimit":40,"help":"Accepting, ignoring, removing. These change your account."},"invites":{"label":"Invitations sent","dailyLimit":10,"help":"Connection requests you send. LinkedIn watches this one closely (about 100 a week)."}},"dailyLimit":150},
     tools: {
     "list_invitations": linkedin__list_invitations,
     "accept_invitation": linkedin__accept_invitation,
     "ignore_invitation": linkedin__ignore_invitation,
     "list_conversations": linkedin__list_conversations,
     "read_thread": linkedin__read_thread,
+    "connect": linkedin__connect,
     "remove_connection": linkedin__remove_connection,
     },
   },
