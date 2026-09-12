@@ -54,7 +54,20 @@ async function run(args) {
     return { dry_run: true, id: wantSlug, name: name.trim(), would_click: `More > Remove connection > ${label}`, dialog: describe(found.d), cancelled: containers().length === 0 };
   }
   found.b.click();
-  await sleep(1500);
-  const after = [...main.querySelectorAll("button")].map((b) => b.textContent.trim());
-  return { id: wantSlug, name: name.trim(), removed: after.includes("Connect") || !after.includes("Message"), buttons_after: after.filter((t) => ["Connect", "Message", "Pending", "Follow"].includes(t)) };
+  // The page re-renders after the removal, so the top card held in `main` goes stale; wait for
+  // the dialog to close, then find the card again. Message can stay offered on a 2nd-degree
+  // profile and Connect can hide under More, so the degree badge ("1st") is the signal, not
+  // the buttons (verified 2026-09-12 on a real removal).
+  for (let i = 0; i < 16 && containers().length; i++) await sleep(250);
+  await sleep(750);
+  const anchor2 = [...document.querySelectorAll("button, a")].find((b) => b.textContent.trim() === "Contact info");
+  let card = anchor2 ? anchor2.parentElement : null;
+  while (card && card.parentElement && !(labels(card).includes("More") && ["Message", "Connect", "Follow"].some((t) => labels(card).includes(t)))) card = card.parentElement;
+  const after = card ? [...new Set(labels(card))] : [];
+  // Visible text only (innerText): hidden markup keeps a "1st" around. The badge reads
+  // "<name> · 2nd" beside the name; the first badge in document order is the top card's.
+  const shown = document.body.innerText.replace(/\s+/g, " ");
+  const esc = name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const degree = (shown.match(new RegExp(esc + "\\s*·\\s*(1st|2nd|3rd)\\b", "i")) || shown.match(/\b(1st|2nd|3rd)\b/) || [])[1] || null;
+  return { id: wantSlug, name: name.trim(), removed: degree ? degree !== "1st" : after.includes("Connect"), degree_after: degree, buttons_after: after.filter((t) => ["Connect", "Message", "Pending", "Follow"].includes(t)) };
 }
