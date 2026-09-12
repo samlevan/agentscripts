@@ -1,7 +1,7 @@
 {
   "name": "linkedin",
-  "version": "0.2.0",
-  "description": "LinkedIn invitations and inbox, read from your own logged-in session: list, accept or ignore pending invitations, list recent conversations, read a thread, remove a connection. Nothing sends on your behalf.",
+  "version": "0.3.0",
+  "description": "LinkedIn invitations and inbox from your own logged-in session: list, accept or ignore pending invitations, list recent conversations, read a thread, send a connection request, remove a connection. Never sends a message.",
   "origins": [
     "https://www.linkedin.com/*"
   ],
@@ -112,6 +112,36 @@
       "category": "reads"
     },
     {
+      "name": "connect",
+      "destructive": true,
+      "description": "Send a connection request to a profile. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Optional note (max 300 chars; free accounts get a few notes a month, and the tool reports when LinkedIn refuses one instead of sending without it). Reports the state if nothing is sent: pending, connected, or they_invited_you (use accept_invitation). dry_run reports what would be sent without sending.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id",
+          "page"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "profile slug"
+          },
+          "page": {
+            "type": "string",
+            "description": "https://www.linkedin.com/in/<slug>/"
+          },
+          "note": {
+            "type": "string",
+            "description": "Optional note to attach, 300 characters max."
+          },
+          "dry_run": {
+            "type": "boolean"
+          }
+        }
+      },
+      "category": "invites"
+    },
+    {
       "name": "remove_connection",
       "destructive": true,
       "description": "Remove a 1st-degree connection. The call must pass page: the person's profile URL (https://www.linkedin.com/in/<slug>/) and id: <slug>. Silent for them. dry_run stops before the confirmation.",
@@ -148,6 +178,11 @@
       "label": "Actions",
       "dailyLimit": 40,
       "help": "Accepting, ignoring, removing. These change your account."
+    },
+    "invites": {
+      "label": "Invitations sent",
+      "dailyLimit": 10,
+      "help": "Connection requests you send. LinkedIn watches this one closely (about 100 a week)."
     }
   },
   "dailyLimit": 150

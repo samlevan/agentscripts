@@ -68,7 +68,7 @@ JS
 
 Or just tell the agent: "list my LinkedIn invites via API for Any Site MCP."
 
-LinkedIn tools: `list_invitations`, `accept_invitation`, `ignore_invitation` (destructive), `list_conversations`, `read_thread`, `remove_connection` (destructive). No send-message in v1.
+LinkedIn tools: `list_invitations`, `accept_invitation`, `ignore_invitation` (destructive), `list_conversations`, `read_thread`, `connect` (destructive, sends a connection request), `remove_connection` (destructive). No send-message.
 
 ## Troubleshooting
 

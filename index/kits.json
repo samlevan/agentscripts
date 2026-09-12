@@ -3,7 +3,7 @@
   "kits": [
     {
       "name": "linkedin",
-      "description": "Invitations and inbox triage on your own LinkedIn session; reads and removes only.",
+      "description": "Invitations and inbox triage on your own LinkedIn session: accept, ignore, connect, remove. Never sends a message.",
       "source": "https://github.com/samlevan/apiforanysite/tree/127c6365b1466c592ddfc8933fb1c142ba8011d4/kits/linkedin",
       "pin": "127c6365b1466c592ddfc8933fb1c142ba8011d4"
     },
